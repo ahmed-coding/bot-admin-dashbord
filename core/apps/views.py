@@ -16,7 +16,7 @@ class SymbolView(viewsets.ModelViewSet):
                        filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['symbol', 'win_rate']
     ordering_fields = '__all__'
-    queryset = models.Symbol.objects.all()
+    queryset = models.Symbol.objects.filter(win_rate__gt=75)
 
 
 

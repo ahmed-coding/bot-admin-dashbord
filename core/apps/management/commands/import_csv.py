@@ -14,7 +14,7 @@ class Command(BaseCommand):
             with open(csv_file, 'r') as file:
                 reader = csv.DictReader(file)
                 for row in reader:
-                    Symbol.objects.get_or_create(
+                    Symbol.objects.update_or_create(
                         symbol=row['Symbol'],
                         return_value=float(row['Return']),
                         trades=int(row['Trades']),

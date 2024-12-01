@@ -57,15 +57,23 @@ headers = {
 
 
 
-def get_top_symbols(limit=100):
+def get_top_symbols(limit,excluded_symbols):
     
-    response = requests.get(get_trad_url, headers=headers)
-    data = response.json()
+    response = requests.get(get_symbol_url, headers=headers)
+    data =response.json()
+    # data =json.dumps(response.json(), indent=4)
+
+    # print(data)
     top_symbols=[]
     for symbol in data:
+        
+        if symbol['symbol'] not in excluded_symbols:
+            top_symbols.append(symbol['symbol'])
+            
         if len(top_symbols) >= limit:
             break
-        top_symbols.append(symbol)
+    return top_symbols
+
 
 
 def get_open_trad():
@@ -126,3 +134,6 @@ def close_trad(data):
 
 
 # print(get_open_trad())
+
+
+# print(get_top_symbols(10,set()))

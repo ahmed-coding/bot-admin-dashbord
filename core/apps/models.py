@@ -2,7 +2,7 @@ from django.db import models
 # Create your models here.
 
 class Symbol(models.Model):
-    symbol = models.CharField(max_length=100)
+    symbol = models.CharField(max_length=100,unique=True)
     return_value = models.FloatField()  # Avoid naming it 'return', as it's a reserved keyword
     trades = models.IntegerField()
     win_rate = models.FloatField()
@@ -31,4 +31,12 @@ class Trade(models.Model):
     def __str__(self):
         return self.symbol
     
+    
+
+class BotSettings(models.Model):
+    key= models.CharField(max_length=100)
+    value= models.CharField(max_length=100)
+
+    def __str__(self):
+        return self.key
     

@@ -208,7 +208,9 @@ class RSIStrategy(Strategy):
 def fetch_binance_data(symbol, interval, start_date, end_date):
     # from binance.client import Client
     # client = Client(api_key="your_api_key", api_secret="your_api_secret")
-    klines = client.get_historical_klines(symbol, interval, start_date)
+    # klines = client.get_historical_klines(symbol, interval, start_date)
+
+    klines = client.get_klines(symbol=symbol, interval=interval, limit=80)
     data = pd.DataFrame(klines, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume', 
                                          'close_time', 'quote_asset_volume', 'number_of_trades', 
                                          'taker_buy_base', 'taker_buy_quote', 'ignore'])
@@ -239,7 +241,9 @@ result=[]
 if __name__ == "__main__":
     # استخدم بيانات Binance أو بيانات جاهزة
     for symbol in get_top_symbols(200):
-        data = fetch_binance_data(symbol, Client.KLINE_INTERVAL_3MINUTE, "12 hours ago UTC", "30 Nov 2023")
+        # data = fetch_binance_data(symbol, Client.KLINE_INTERVAL_3MINUTE, "12 hours ago UTC", "6 hours ago UTC")
+        data = fetch_binance_data(symbol, Client.KLINE_INTERVAL_3MINUTE, "3 hours ago UTC", "6 hours ago UTC")
+
         # data = fetch_binance_data(symbol, Client.KLINE_INTERVAL_3MINUTE, "168 hours ago UTC", "30 Nov 2024")
 
         # data = fetch_binance_data(symbol, Client.KLINE_INTERVAL_3MINUTE, "17 Nov 2024", "23 Nov 2024")
