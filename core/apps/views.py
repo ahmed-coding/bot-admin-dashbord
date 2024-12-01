@@ -1,3 +1,31 @@
 from django.shortcuts import render
 
 # Create your views here.
+from rest_framework import viewsets
+from . import models
+from . import serializers
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters
+
+
+
+class SymbolView(viewsets.ModelViewSet):
+    search_fields = 'symbol'
+    serializer_class = serializers.SymbolSerializers
+    filter_backends = [DjangoFilterBackend,
+                       filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['symbol', 'win_rate']
+    ordering_fields = '__all__'
+    queryset = models.Symbol.objects.all()
+
+
+
+
+class TradeView(viewsets.ModelViewSet):
+    search_fields = ['is_open', 'symbol']
+    serializer_class = serializers.TradeSerializers
+    filter_backends = [DjangoFilterBackend,
+                       filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['symbol', 'is_open']
+    ordering_fields = '__all__'
+    queryset = models.Symbol.objects.all()
