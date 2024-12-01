@@ -26,6 +26,6 @@ class TradeView(viewsets.ModelViewSet):
     serializer_class = serializers.TradeSerializers
     filter_backends = [DjangoFilterBackend,
                        filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['symbol', 'is_open']
+    filterset_fields = ['symbol', "is_open"]
     ordering_fields = '__all__'
-    queryset = models.Symbol.objects.all()
+    queryset = models.Trade.objects.all()

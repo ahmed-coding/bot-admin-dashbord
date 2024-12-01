@@ -13,7 +13,7 @@ class SymbolSerializers(serializers.ModelSerializer):
 
 
 class TradeSerializers(serializers.ModelSerializer):
-    is_open = serializers.ReadOnlyField()
+    # is_open = serializers.ReadOnlyField()
     class Meta:
         model= models.Trade
         fields= '__all__'
