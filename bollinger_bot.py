@@ -39,8 +39,8 @@ timeout=60 # وقت انتهاء وقت الصفقة
 commission_rate = 0.002 # نسبة العمولة للمنصة
 klines_interval=Client.KLINE_INTERVAL_3MINUTE
 klines_limit=14
-count_top_symbols=50
-analize_period=8
+count_top_symbols=200
+analize_period=80
 start_date= '3 hours ago UTC'
 
 excluded_symbols = set()  # قائمة العملات المستثناة بسبب أخطاء متكررة
@@ -84,10 +84,10 @@ def open_trade_with_dynamic_target(symbol, investment=2.5, base_profit_target=0.
         print(f"{datetime.now()} - الرصيد غير كافٍ من BNB لتغطية الرسوم. {symbol} يرجى إيداع BNB.")
         return
     
-    if not can_trade(symbol=symbol):
-        # print(f"{datetime.now()} -لقدم تم فتح صفقة حديثاً لعملة {symbol} سيتم الانتظار .")
+    # if not can_trade(symbol=symbol):
+    #     # print(f"{datetime.now()} -لقدم تم فتح صفقة حديثاً لعملة {symbol} سيتم الانتظار .")
 
-        return
+    #     return
         
     price = float(client.get_symbol_ticker(symbol=symbol)['price'])
     # klines = client.get_klines(symbol=symbol, interval=klines_interval, limit=analize_period)
@@ -100,11 +100,11 @@ def open_trade_with_dynamic_target(symbol, investment=2.5, base_profit_target=0.
         return
 
     # Calculate dynamic profit target and stop loss based on volatility
-    profit_target = base_profit_target + commission_rate
+    profit_target = base_profit_target 
     stop_loss = base_stop_loss
     target_price = price * (1 + profit_target)
     stop_price = price * (1 - stop_loss)
-    quantity = adjust_quantity(symbol, (investment) / price)
+    quantity = adjust_quantity(client,symbol, (investment) / price)
 
 
 
@@ -118,12 +118,23 @@ def open_trade_with_dynamic_target(symbol, investment=2.5, base_profit_target=0.
             'initial_price': price,
             'target_price': target_price,
             'stop_price': stop_price,
-            'start_time':str( datetime.fromtimestamp( time.time())),
+            'start_time':str(datetime.fromtimestamp(time.time())),
             'timeout': timeout * 60,
             'investment': investment - commission
         }
-        
-        active_trades = request_load.get_open_trad()
+        active_trades[symbol] = {
+            'quantity': quantity,
+            'initial_price': price,
+            'target_price': target_price,
+            'stop_price': stop_price,
+            'start_time': str(datetime.fromtimestamp(time.time())),
+            'timeout': timeout * 60,
+            'investment': investment - commission
+        }
+        order_response= request_load.create_trad(payload)
+        if order_response:
+            print(f"تم حفظ الصفقة بنجاح لعملة {symbol}")
+        # active_trades = request_load.get_open_trad()
         
         balance = helper.get_usdt_balance(client)
         last_trade_time[symbol] = time.time()  # Record the trade timestamp
@@ -163,7 +174,6 @@ def sell_trade(symbol, trade_quantity):
         last_trade_time[symbol] = time.time()  # Record the trade timestamp
         balance = helper.get_usdt_balance(client)
         earnings = adjusted_quantity * current_price
-
         print(f"تم تنفيذ عملية البيع لـ {symbol} بكمية {adjusted_quantity} وربح {earnings}")
         print(f"الرصيد المتبقي {balance}")
 
@@ -212,14 +222,17 @@ def check_trade_conditions():
                 total_sale = sold_quantity * current_price
                 commission = total_sale * commission_rate
                 net_sale = total_sale - commission
+                update_status= request_load.close_trad(trade)
+
                 earnings = trade['quantity'] * current_price - trade['initial_price'] * trade['quantity']
                 balance = helper.get_usdt_balance(client)
+                
                 print(f"{datetime.now()} - تم {result} الصفقة لـ {symbol} عند السعر {current_price} وربح {earnings}")
                 with open(csv_file, mode='a', newline='', encoding='utf-8') as file:
                     writer = csv.writer(file)
                     start_time=trade['start_time']
                     
-                    writer.writerow([symbol, sold_quantity, trade['initial_price'], trade['target_price'], trade['stop_price'], datetime.now(),datetime.fromtimestamp(trade['start_time']), base_profit_target, base_stop_loss, str(timeout) + 'm', earnings, result, balance])
+                    writer.writerow([symbol, sold_quantity, trade['initial_price'], trade['target_price'], trade['stop_price'], datetime.now(), str(trade['start_time']), base_profit_target, base_stop_loss, str(timeout) + 'm', earnings, result, balance])
                 del active_trades[symbol]
                 
         except BinanceAPIException as e:
@@ -232,8 +245,11 @@ def check_trade_conditions():
 
 # تحديث قائمة الرموز بشكل دوري
 def update_symbols_periodically(interval=600):
-    global symbols_to_trade
-    
+    global symbols_to_trade,balance
+    balance = helper.get_usdt_balance(client)
+    print(f"الرصيد المتبقي {balance}")
+
+    print()
     while True:
         symbols_to_trade = request_load.get_top_symbols(count_top_symbols,excluded_symbols)
         print(f"{datetime.now()} - تم تحديث قائمة العملات للتداول: {symbols_to_trade}")
@@ -279,6 +295,7 @@ def run_bot():
     print(symbols_to_trade)
     symbol_update_thread = threading.Thread(target=update_symbols_periodically, args=(600,))
     symbol_update_thread.start()
+    # print(active_trades)
 
     # تشغيل خيوط تحديث الأسعار ومراقبة الصفقات
     price_thread = threading.Thread(target=update_prices)

@@ -7,6 +7,7 @@ import decimal
 
 
 start_date='3 hours ago UTC'
+analize_period=80
 
 def get_klines(client, symbol, interval, start_date):
     # klines = client.get_historical_klines(symbol, interval, start_date)
@@ -34,6 +35,7 @@ def adjust_quantity(client,symbol, quantity):
     quantity = decimal.Decimal(str(quantity))
     return float((quantity // precision) * precision)
 
+
 def get_lot_size( client,symbol):
     exchange_info = client.get_symbol_info(symbol)
     for filter in exchange_info['filters']:
@@ -57,7 +59,7 @@ start_date='3 hours ago UTC'
 # دالة لجلب البيانات من Binance
 def fetch_binance_data(client,symbol, interval, start_date):
     # klines =  client.get_historical_klines(symbol, interval, start_date)
-    klines = client.get_klines(symbol=symbol, interval=interval, limit=60)
+    klines = client.get_klines(symbol=symbol, interval=interval, limit= analize_period)
 
     data = pd.DataFrame(klines, columns=[
         'timestamp', 'open', 'high', 'low', 'close', 'volume', 

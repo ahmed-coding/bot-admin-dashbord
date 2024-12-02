@@ -198,10 +198,10 @@ class RSIStrategy(Strategy):
                 
         
         
-        if self.data.Close[-3] < self.bol_h[-3] and self.data.Close[-2] > self.bol_h[-2]:
-            for trade in self.trades:
-                if trade.is_long:
-                    self.position.close()
+        # if self.data.Close[-3] < self.bol_h[-3] and self.data.Close[-2] > self.bol_h[-2]:
+        #     for trade in self.trades:
+        #         if trade.is_long:
+        #             self.position.close()
 
 
 # تحميل البيانات التاريخية (استخدام Binance أو بيانات جاهزة)

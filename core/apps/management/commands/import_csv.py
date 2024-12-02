@@ -13,6 +13,7 @@ class Command(BaseCommand):
         try:
             with open(csv_file, 'r') as file:
                 reader = csv.DictReader(file)
+                Symbol.objects.all().delete()
                 for row in reader:
                     Symbol.objects.update_or_create(
                         symbol=row['Symbol'],
