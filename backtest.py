@@ -86,38 +86,63 @@ black_list=[
     ]
 
 
+# def get_top_symbols(limit=20, profit_target=0.007, rsi_threshold=70):
+#     tickers = client.futures_ticker()
+#     exchange_info = client.futures_exchange_info()  # جلب معلومات التداول
+#     valid_symbols = {info['symbol'] for info in exchange_info['symbols']}  # الرموز المسموح بها
+#     sorted_tickers = sorted(valid_symbols, key=lambda x: float(x['quoteVolume']), reverse=True)
+#     top_symbols = []
+    
+#     for ticker in sorted_tickers:
+#         if ticker['symbol'].endswith("USDT") and ticker['symbol'] not in black_list :
+#         # if ticker['symbol'].endswith("USDT") and ticker['symbol'] not in excluded_symbols and not 'BTTC' in str(ticker['symbol']):
+#             try:
+#                 klines = client.get_klines(symbol=ticker['symbol'], interval=klines_interval, limit=klines_limit)
+#                 # closing_prices = [float(kline[4]) for kline in klines]
+#                 # stddev = statistics.stdev(closing_prices)
+#                 if klines is None or klines == []:
+#                     # print(f"the data in symbol {symbol} is empty") 
+#                     continue
+#                 # حساب مؤشر RSI
+#                 # rsi = calculate_rsi(closing_prices,period=klines_limit)
+                
+#                 # اختيار العملة بناءً على التذبذب ومؤشر RSI
+#                 # avg_price = sum(closing_prices) / len(closing_prices)
+#                 # volatility_ratio = stddev / avg_price
+
+#                 # if stddev < 0.04 and volatility_ratio >= profit_target :
+#                 top_symbols.append(ticker['symbol'])
+#                     # print(f"تم اختيار العملة {ticker['symbol']} بنسبة تذبذب {volatility_ratio:.4f} و RSI {rsi:.2f}")
+                
+#                 if len(top_symbols) >= limit:
+#                     break
+#             except BinanceAPIException as e:
+#                 print(f"خطأ في جلب بيانات {ticker['symbol']}: {e}")
+#                 excluded_symbols.add(ticker['symbol'])
+#     return top_symbols
+
+
 def get_top_symbols(limit=20, profit_target=0.007, rsi_threshold=70):
-    tickers = client.get_ticker()
+    tickers = client.futures_ticker()
+    exchange_info = client.futures_exchange_info()  # جلب معلومات التداول
+    valid_symbols = {info['symbol'] for info in exchange_info['symbols']}  # الرموز المسموح بها
     sorted_tickers = sorted(tickers, key=lambda x: float(x['quoteVolume']), reverse=True)
     top_symbols = []
     
     for ticker in sorted_tickers:
-        if ticker['symbol'].endswith("USDT") and ticker['symbol'] not in black_list :
-        # if ticker['symbol'].endswith("USDT") and ticker['symbol'] not in excluded_symbols and not 'BTTC' in str(ticker['symbol']):
+        if ticker['symbol'].endswith("USDT") and ticker['symbol'] in valid_symbols:  # تحقق من صلاحية الرمز
             try:
                 klines = client.get_klines(symbol=ticker['symbol'], interval=klines_interval, limit=klines_limit)
-                # closing_prices = [float(kline[4]) for kline in klines]
-                # stddev = statistics.stdev(closing_prices)
                 if klines is None or klines == []:
-                    # print(f"the data in symbol {symbol} is empty") 
                     continue
-                # حساب مؤشر RSI
-                # rsi = calculate_rsi(closing_prices,period=klines_limit)
-                
-                # اختيار العملة بناءً على التذبذب ومؤشر RSI
-                # avg_price = sum(closing_prices) / len(closing_prices)
-                # volatility_ratio = stddev / avg_price
-
-                # if stddev < 0.04 and volatility_ratio >= profit_target :
                 top_symbols.append(ticker['symbol'])
-                    # print(f"تم اختيار العملة {ticker['symbol']} بنسبة تذبذب {volatility_ratio:.4f} و RSI {rsi:.2f}")
-                
                 if len(top_symbols) >= limit:
                     break
             except BinanceAPIException as e:
                 print(f"خطأ في جلب بيانات {ticker['symbol']}: {e}")
                 excluded_symbols.add(ticker['symbol'])
     return top_symbols
+
 
 
 
@@ -210,7 +235,7 @@ def fetch_binance_data(symbol, interval, start_date, end_date):
     # client = Client(api_key="your_api_key", api_secret="your_api_secret")
     # klines = client.get_historical_klines(symbol, interval, start_date)
 
-    klines = client.get_klines(symbol=symbol, interval=interval, limit=80)
+    klines = client.futures_klines(symbol=symbol, interval=interval, limit=120)
     data = pd.DataFrame(klines, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume', 
                                          'close_time', 'quote_asset_volume', 'number_of_trades', 
                                          'taker_buy_base', 'taker_buy_quote', 'ignore'])

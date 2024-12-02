@@ -100,6 +100,28 @@ def should_open_trade(client,symbol):
     return False        
         
 
+def should_close_trade(client,symbol):
+    data = fetch_binance_data(client, symbol, Client.KLINE_INTERVAL_3MINUTE, start_date)
+    
+    # if data is None or len(data) < 20:
+    #     print(f"بيانات غير كافية لـ {symbol}")
+    #     return
+    
+    bol_h_band = bol_h(data)
+    bol_l_band = bol_l(data)
+    close_prices = data['close']
+
+    # فتح صفقة شراء إذا اخترق السعر الحد السفلي
+    if close_prices.iloc[-3] > bol_l_band.iloc[-3] and close_prices.iloc[-2] < bol_l_band.iloc[-2]:
+        return False
+
+    # إغلاق صفقة إذا اخترق السعر الحد العلوي
+    if close_prices.iloc[-3] < bol_h_band.iloc[-3] and close_prices.iloc[-2] > bol_h_band.iloc[-2]:
+        return True
+    
+    
+    return False        
+        
 
 
 
