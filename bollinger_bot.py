@@ -98,7 +98,7 @@ def open_trade_with_dynamic_target(symbol, investment=2.5, base_profit_target=0.
     if not should_open_trade(client=client, symbol=symbol,intervel=klines_interval,limit=analize_period):
         # print(f"لا يجب شراء {symbol} في الوقت الحالي ")
         return
-
+    time.sleep(5) # لتجنب النزول اثناء فتح الصفقة 
     # Calculate dynamic profit target and stop loss based on volatility
     profit_target = base_profit_target 
     stop_loss = base_stop_loss
