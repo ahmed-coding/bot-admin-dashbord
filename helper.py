@@ -4,7 +4,7 @@ from datetime import datetime
 import pandas as pd
 import ta
 import decimal
-
+from binance.client import Client
 
 start_date='3 hours ago UTC'
 analize_period=80
@@ -46,6 +46,8 @@ def get_lot_size( client,symbol):
 
 
 
+
+
 def check_bnb_balance(client,min_bnb_balance=0.0001):  # تقليل الحد الأدنى المطلوب
     # تحقق من رصيد BNB للتأكد من تغطية الرسوم
     account_info = client.get_asset_balance(asset='BNB')
@@ -69,6 +71,21 @@ def fetch_binance_data(client,symbol, interval, start_date):
     data['close'] = data['close'].astype(float)
     return data[['close']]
 
+
+
+def fetch_binance_futuer_data(client,symbol, interval, start_date):
+    # klines =  client.get_historical_klines(symbol, interval, start_date)
+    klines = client.futures_klines(symbol=symbol, interval=interval, limit= analize_period)
+
+    data = pd.DataFrame(klines, columns=[
+        'timestamp', 'open', 'high', 'low', 'close', 'volume', 
+        'close_time', 'quote_asset_volume', 'number_of_trades', 
+        'taker_buy_base', 'taker_buy_quote', 'ignore'
+    ])
+    data['close'] = data['close'].astype(float)
+    return data[['close']]
+
+
 # ملف CSV لتسجيل التداولات
 
 
@@ -76,6 +93,18 @@ def get_usdt_balance(client):
 
     return float(client.get_asset_balance(asset='USDT')['free'])
 
+def get_futuer_usdt_balance(client):
+    futures_account_info = client.futures_account()
+
+    # البحث عن الرصيد المتاح
+    for asset in futures_account_info['assets']:
+        if asset['asset'] == 'USDT':  # إذا كنت تتداول بعملة USDT
+            available_balance = float(asset['availableBalance'])
+            total_balance = float(asset['walletBalance'])
+            print(f"الرصيد الإجمالي: {total_balance} USDT")
+            print(f"الرصيد المتاح: {available_balance} USDT")
+            
+    return available_balance / 2
 
 def should_open_trade(client,symbol):
     data = fetch_binance_data(client, symbol, Client.KLINE_INTERVAL_3MINUTE, start_date)
@@ -120,9 +149,65 @@ def should_close_trade(client,symbol):
         return True
     
     
+    
     return False        
         
 
 
 
 
+def should_open_futuer_trade(client,symbol):
+    data = fetch_binance_futuer_data(client, symbol, Client.KLINE_INTERVAL_3MINUTE, start_date)
+    
+    # if data is None or len(data) < 20:
+    #     print(f"بيانات غير كافية لـ {symbol}")
+    #     return
+    
+    bol_h_band = bol_h(data)
+    bol_l_band = bol_l(data)
+    close_prices = data['close']
+
+    # فتح صفقة شراء إذا اخترق السعر الحد السفلي
+    if close_prices.iloc[-3] > bol_l_band.iloc[-3] and close_prices.iloc[-2] < bol_l_band.iloc[-2]:
+        return True
+
+    # إغلاق صفقة إذا اخترق السعر الحد العلوي
+    if close_prices.iloc[-3] < bol_h_band.iloc[-3] and close_prices.iloc[-2] > bol_h_band.iloc[-2]:
+        return False
+    
+    
+    return False        
+        
+
+
+def adjust_futuser_price_precision(client, symbol, price):
+    # استرجاع معلومات الرمز
+    symbol_info = client.get_symbol_info(symbol)
+    for filter in symbol_info['filters']:
+        if filter['filterType'] == 'PRICE_FILTER':
+            tick_size = float(filter['tickSize'])  # الحصول على أصغر وحدة سعرية
+            # تقليص السعر بحيث يتماشى مع tick_size
+            price = round(price / tick_size) * tick_size
+            return price
+    return price  # إذا لم يكن هناك filter ل PRICE_FILTER
+
+
+def adjust_futuer_quantity(client, symbol, quantity):
+    step_size = get_futuer_lot_size(client, symbol)
+    if step_size is None:
+        return quantity
+    # Adjust quantity to be a multiple of step_size
+    precision = decimal.Decimal(str(step_size))
+    quantity = decimal.Decimal(str(quantity))
+    adjusted_quantity = (quantity // precision) * precision
+    return float(adjusted_quantity)
+
+
+
+def get_futuer_lot_size( client,symbol):
+    exchange_info = client.get_symbol_info(symbol)
+    for filter in exchange_info['filters']:
+        if filter['filterType'] == 'LOT_SIZE':
+            step_size = float(filter['stepSize'])
+            return step_size
+    return None

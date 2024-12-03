@@ -9,7 +9,7 @@ import statistics
 from binance.exceptions import BinanceAPIException
 import threading
 import requests
-from config import API_KEY, API_SECRET
+from config import API_KEY, API_SECRET, FUTUER_API_TEST_KEY, FUTUER_API_TEST_SECRET
 from helper import *
 import numpy as np
 import pandas as pd
@@ -23,13 +23,18 @@ import helper
 
 client = Client(API_KEY,API_SECRET,requests_params={'timeout':90})
 # client.API_URL = 'https://testnet.binance.vision/api'
+# client = Client(FUTUER_API_TEST_KEY, FUTUER_API_TEST_SECRET, testnet=True, requests_params={'timeout':90})
+# client.API_URL = "https://testnet.binancefuture.com"
 
 
+# client.futures_account_balance()
 current_prices = {}
 active_trades = request_load.get_open_trad()
 # إدارة المحفظة 0
-balance = helper.get_usdt_balance(client) # الرصيد المبدئي للبوت
-investment=6 # حجم كل صفقة
+# balance = helper.get_futuer_usdt_balance(client) # الرصيد المبدئي للبوت
+balance = 3# الرصيد المبدئي للبوت
+
+investment=1.5 # حجم كل صفقة
 base_profit_target=0.015 # نسبة الربح
 # base_profit_target=0.005 # نسبة الربح
 base_stop_loss=0.02 # نسبة الخسارة
@@ -42,15 +47,27 @@ count_top_symbols=200
 analize_period=120
 start_date= '3 hours ago UTC'
 
-excluded_symbols = set()  # قائمة العملات المستثناة بسبب أخطاء متكررة
+
+leverage = 5   # الرافعة المالية
+
+
+excluded_symbols =['BONKUSDT','LUNCUSDT']  # قائمة العملات المستثناة بسبب أخطاء متكررة
 symbols_to_trade =request_load.get_top_symbols(count_top_symbols ,excluded_symbols)
 last_trade_time = {}
 
 top_symbols=request_load.get_top_symbols(count_top_symbols ,excluded_symbols)
 
 
+_symbols = client.futures_exchange_info()['symbols']
+valid_symbols = [s['symbol'] for s in _symbols]
 
-csv_file = 'bollinger_trades_log.csv'
+
+
+
+
+
+
+csv_file = 'bollinger__futuers_trades_log.csv'
 if not os.path.exists(csv_file):
     with open(csv_file, mode='w', newline='', encoding='utf-8') as file:
         writer = csv.writer(file)
@@ -65,6 +82,89 @@ def can_trade(symbol):
 
 
 
+
+
+def open_futures_trade(symbol, investment, leverage):
+    global base_profit_target, base_stop_loss, active_trades
+    if balance < investment:
+        # print(f"{datetime.now()} - {symbol} -الرصيد الحالي غير كافٍ لفتح صفقة جديدة.")
+        return
+    
+    if not should_open_futuer_trade(client=client, symbol=symbol):
+    # print(f"لا يجب شراء {symbol} في الوقت الحالي ")
+        return
+    
+    try:
+        # ضبط الرافعة المالية
+        client.futures_change_leverage(symbol=symbol, leverage=leverage)
+
+        # الحصول على سعر السوق الحالي
+        ticker = client.futures_symbol_ticker(symbol=symbol)
+        
+        if not ticker:
+            return
+        current_price = float(ticker['price'])
+        price = float(ticker['price'])
+        stop_price = current_price * (1 - base_stop_loss)
+
+        # حساب الكمية المطلوبة بناءً على الاستثمار
+        quantity = adjust_futuer_quantity(client,symbol,((investment / current_price) * leverage))  # قد تحتاج لتعديل الدقة حسب الرمز
+
+        # تنفيذ أمر شراء بالسوق
+        order = client.futures_create_order(
+            symbol=symbol,
+            side='BUY',
+            type='MARKET',
+            quantity=quantity
+        )
+
+        print(f"تم فتح صفقة شراء {symbol} بنجاح!")
+
+        # حساب سعر جني الأرباح
+        target_price = adjust_futuser_price_precision(client, symbol, current_price * (1 + base_profit_target))
+        stop_loss_price = adjust_futuser_price_precision(client, symbol, current_price * (1 - base_stop_loss))
+
+        # target_price = current_price * (1 + base_profit_target)
+        # stop_loss_price = current_price * (1 - base_stop_loss)
+
+        # إعداد أمر جني الأرباح
+        client.futures_create_order(
+            symbol=symbol,
+            side='SELL',
+            type='TAKE_PROFIT_MARKET',
+            stopPrice=target_price,
+            closePosition=True
+        )
+
+        print(f"تم تحديد مستوى جني الأرباح عند {target_price}")
+
+        client.futures_create_order(
+            symbol=symbol,
+            side="SELL",
+            type="STOP_MARKET",
+            stopPrice=stop_loss_price,
+            closePosition=True
+        )
+        print(f"تم تعيين وقف الخسارة عند {stop_loss_price}.")
+        # تسجيل البيانات في حال أردت المتابعة لاحقًا
+        payload = {
+            "symbol": symbol,
+            "quantity": quantity,
+            "initial_price": current_price,
+            "target_price": target_price,
+            'stop_price': stop_price,
+            'start_time':str(datetime.fromtimestamp(time.time())),
+            "timeout": timeout * 60,
+            "investment": investment
+        }
+        # order_response= request_load.create_trad(payload)
+        # active_trades = request_load.get_open_trad()
+
+        return payload
+
+    except BinanceAPIException as e:
+        print(f"خطأ أثناء فتح الصفقة: {e}")
+        return None
 
 
 def open_trade_with_dynamic_target(symbol, investment=2.5, base_profit_target=0.002, base_stop_loss=0.0005, timeout=30):
@@ -88,7 +188,7 @@ def open_trade_with_dynamic_target(symbol, investment=2.5, base_profit_target=0.
 
     #     return
         
-    price = float(client.get_symbol_ticker(symbol=symbol)['price'])
+    price = float(client.futures_symbol_ticker(symbol=symbol)['price'])
     # klines = client.get_klines(symbol=symbol, interval=klines_interval, limit=analize_period)
     # closing_prices = [float(kline[4]) for kline in klines]
     # avg_volatility = statistics.stdev(closing_prices)
@@ -104,7 +204,6 @@ def open_trade_with_dynamic_target(symbol, investment=2.5, base_profit_target=0.
     target_price = price * (1 + profit_target)
     stop_price = price * (1 - stop_loss)
     quantity = adjust_quantity(client,symbol, (investment) / price)
-
 
 
     try:
@@ -142,7 +241,7 @@ def open_trade_with_dynamic_target(symbol, investment=2.5, base_profit_target=0.
         print(f"الرصيد المتبقي {balance}")
     except BinanceAPIException as e:
         if 'NOTIONAL' in str(e) or 'Invalid symbol' in str(e)  or 'Market is closed' in str(e):
-            excluded_symbols.add(symbol)
+            excluded_symbols.append(symbol)
         print(f"خطأ في فتح الصفقة لـ {symbol}: {e}")
 
 
@@ -153,7 +252,7 @@ def sell_trade(symbol, trade_quantity):
         balance_info = client.get_asset_balance(asset=symbol.replace("USDT", ""))
         # available_quantity = float(balance_info['free'])
         available_quantity = trade_quantity
-        current_price = float(client.get_symbol_ticker(symbol=symbol)['price'])
+        current_price = float(client.futures_symbol_ticker(symbol=symbol)['price'])
 
         # التأكد من أن الكمية تلبي الحد الأدنى لـ LOT_SIZE وتعديل الدقة المناسبة
         step_size = get_lot_size(client,symbol)
@@ -189,7 +288,11 @@ def check_trade_conditions():
     for symbol, trade in list(active_trades.items()):
         try:
             
-            current_price = float(client.get_symbol_ticker(symbol=symbol)['price'])
+            ticker = client.futures_symbol_ticker(symbol=symbol)
+            if not ticker:
+                continue
+            # print(ticker)
+            current_price = float(ticker['price'])
             current_prices[symbol] = current_price
         except BinanceAPIException as e:
             print(f"خطأ في تحديث السعر لـ {symbol}: {e}")
@@ -205,10 +308,10 @@ def check_trade_conditions():
         #     return
         try:
             if current_price >= trade['target_price']:
-                sold_quantity = sell_trade(symbol, trade['quantity'])
+                # sold_quantity = sell_trade(symbol, trade['quantity'])
                 result = 'ربح' if sold_quantity > 0 else None
             elif current_price <= trade['stop_price']:
-                sold_quantity = sell_trade(symbol, trade['quantity'])
+                # sold_quantity = sell_trade(symbol, trade['quantity'])
                 result = 'خسارة' if sold_quantity > 0 else None
             # elif time.time() - trade['start_time'] >= trade['timeout']:
             #     sold_quantity = sell_trade(symbol, trade['quantity'])
@@ -222,7 +325,7 @@ def check_trade_conditions():
                 total_sale = sold_quantity * current_price
                 commission = total_sale * commission_rate
                 net_sale = total_sale - commission
-                update_status= request_load.close_trad(trade)
+                update_status = request_load.close_trad(trade)
 
                 earnings = trade['quantity'] * current_price - trade['initial_price'] * trade['quantity']
                 balance = helper.get_usdt_balance(client)
@@ -237,7 +340,7 @@ def check_trade_conditions():
                 
         except BinanceAPIException as e:
             if 'NOTIONAL' in str(e) or 'Invalid symbol' in str(e) or 'Market is closed' in str(e):
-                excluded_symbols.add(symbol)
+                excluded_symbols.append(symbol)
             print(f"خطأ في بيع {symbol}: {e}")
             continue
 
@@ -246,7 +349,7 @@ def check_trade_conditions():
 # تحديث قائمة الرموز بشكل دوري
 def update_symbols_periodically(interval=600):
     global symbols_to_trade,balance
-    balance = helper.get_usdt_balance(client)
+    # balance = helper.get_futuer_usdt_balance(client)
     print(f"الرصيد المتبقي {balance}")
 
     print()
@@ -257,23 +360,31 @@ def update_symbols_periodically(interval=600):
 
 # مراقبة تحديث الأسعار وفتح الصفقات
 def update_prices():
-    global symbols_to_trade
+    global symbols_to_trade, excluded_symbols
 
     while True:
         # check_btc= check_btc_price()
         check_btc=True
         for symbol in symbols_to_trade:
-            if symbol in excluded_symbols :
+            if symbol in excluded_symbols or symbol not in valid_symbols :
                 continue
             try:
-                current_prices[symbol] = float(client.get_symbol_ticker(symbol=symbol)['price'])
-                # print(f"تم تحديث السعر لعملة {symbol}: {current_prices[symbol]}")
+                # current_prices[symbol] = float(client.futures_symbol_ticker(symbol=symbol)['price'])
+                ticker = client.futures_symbol_ticker(symbol=symbol)
+                if not ticker:
+                    excluded_symbols.append(symbol)  # Exclude symbols causing frequent errors
+                    continue
+                # print(ticker)
+                current_price = float(ticker['price'])
+                current_prices[symbol] = current_price
+
+                # # print(f"تم تحديث السعر لعملة {symbol}: {current_prices[symbol]}")
                 if symbol not in active_trades and check_btc:
-                    open_trade_with_dynamic_target(symbol,investment=investment,base_profit_target=base_profit_target,base_stop_loss=base_stop_loss,timeout=timeout)
+                    open_futures_trade(symbol,investment=investment,leverage=leverage)
             except BinanceAPIException as e:
                 print(f"خطأ في تحديث السعر لـ {symbol}: {e}")
                 if 'NOTIONAL' in str(e) or 'Invalid symbol' in str(e):
-                    excluded_symbols.add(symbol)  # Exclude symbols causing frequent errors
+                    excluded_symbols.append(symbol)  # Exclude symbols causing frequent errors
                     time.sleep(0.1)
 
 # مراقبة حالة الصفقات المغلقة
@@ -307,7 +418,7 @@ def run_bot():
     
 if __name__ == "__main__":
     run_bot()
-    print(helper.get_usdt_balance(client))
+    print(balance)
             
             
     print("Bot is turn of")
