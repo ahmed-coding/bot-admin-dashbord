@@ -5,6 +5,8 @@ import pandas as pd
 import ta
 import decimal
 from binance.client import Client
+from decimal import Decimal, ROUND_DOWN
+
 
 start_date='3 hours ago UTC'
 analize_period=80
@@ -104,7 +106,7 @@ def get_futuer_usdt_balance(client):
             print(f"الرصيد الإجمالي: {total_balance} USDT")
             print(f"الرصيد المتاح: {available_balance} USDT")
             
-    return available_balance / 2
+    return available_balance - 7
 
 def should_open_trade(client,symbol):
     data = fetch_binance_data(client, symbol, Client.KLINE_INTERVAL_3MINUTE, start_date)
@@ -227,16 +229,16 @@ def should_open_futuer_trade(client,symbol,intervel, limit):
         
 
 
+
 def adjust_futuser_price_precision(client, symbol, price):
     # استرجاع معلومات الرمز
     symbol_info = client.get_symbol_info(symbol)
     for filter in symbol_info['filters']:
         if filter['filterType'] == 'PRICE_FILTER':
-            tick_size = float(filter['tickSize'])  # الحصول على أصغر وحدة سعرية
-            # تقليص السعر بحيث يتماشى مع tick_size
-            price = round(price / tick_size) * tick_size
-            return price
-    return price  # إذا لم يكن هناك filter ل PRICE_FILTER
+            tick_size = Decimal(filter['tickSize'])  # الحصول على أصغر وحدة سعرية
+            price = (Decimal(price) // tick_size) * tick_size  # تقليص السعر ليتماشى مع tick_size
+            return float(price)
+    return price  # إذا لم يكن هناك filter لـ PRICE_FILTER
 
 
 def adjust_futuer_quantity(client, symbol, quantity):
@@ -244,17 +246,22 @@ def adjust_futuer_quantity(client, symbol, quantity):
     if step_size is None:
         return quantity
     # Adjust quantity to be a multiple of step_size
-    precision = decimal.Decimal(str(step_size))
-    quantity = decimal.Decimal(str(quantity))
-    adjusted_quantity = (quantity // precision) * precision
-    return float(adjusted_quantity)
+    precision = Decimal(str(step_size))
+    quantity = Decimal(str(quantity))
+    return float((quantity // precision) * precision)
 
 
-
-def get_futuer_lot_size( client,symbol):
-    exchange_info = client.get_symbol_info(symbol)
-    for filter in exchange_info['filters']:
+def get_futuer_lot_size(client, symbol):
+    symbol_info = client.get_symbol_info(symbol)
+    for filter in symbol_info['filters']:
         if filter['filterType'] == 'LOT_SIZE':
             step_size = float(filter['stepSize'])
             return step_size
     return None
+
+def get_open_positions_count(client):
+    positions = client.futures_position_information()
+    open_positions = [position for position in positions if float(position['positionAmt']) != 0.0]
+    # print(f"عدد الصفقات المفتوحة حاليًا: {len(open_positions)}")
+
+    return len(open_positions)

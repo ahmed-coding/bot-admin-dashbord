@@ -7,11 +7,21 @@ import json
 # Define the Django API endpoint
 end_point='http://127.0.0.1:8000/'
 
+
+# Spot
 create_trad_url =end_point+ "api/create-trade/"  # Replace with the actual endpoint
 update_trad_url =end_point+ "api/update-trade/"  # Replace with the actual endpoint
-
 get_trad_url =end_point+ "api/list-trade/?is_open=true"  # Replace with the actual endpoint
+
+# Futuer
+
+create_futuer_trad_url =end_point+ "api/create-trade/"  # Replace with the actual endpoint
+update_trad_url =end_point+ "api/update-trade/"  # Replace with the actual endpoint
+get_futuer_trad_url =end_point+ "api/list-trade/?is_open=true&is_futuer=true"  # Replace with the actual endpoint
+
 get_symbol_url =end_point+ "api/get-top/?ordering=-win_rate/"  # Replace with the actual endpoint
+get_futuer_symbol_url =end_point+ "api/get-futuer-top/?ordering=-win_rate/"  # Replace with the actual endpoint
+
 
 
 # JSON payload to send
@@ -57,6 +67,9 @@ headers = {
 
 
 
+
+
+# -------------------------- Spot method ----------------------------
 def get_top_symbols(limit,excluded_symbols):
     
     response = requests.get(get_symbol_url, headers=headers)
@@ -73,7 +86,6 @@ def get_top_symbols(limit,excluded_symbols):
         if len(top_symbols) >= limit:
             break
     return top_symbols
-
 
 
 def get_open_trad():
@@ -96,12 +108,7 @@ def create_trad(data):
     return json.dumps(response.json(), indent=4)
 
 
-
-
-
-
 # print(create_trad(payload))
-
 
 def close_trad(data):
     url = update_trad_url + str(data['id']) +"/"
@@ -137,3 +144,34 @@ def close_trad(data):
 
 
 # print(get_top_symbols(10,set()))
+
+
+
+# -------------------------- Futuer method ----------------------------
+def get_futuer_open_trad():
+    
+    response = requests.get(get_futuer_trad_url, headers=headers)
+    data = response.json()
+    open_trad={}
+    for trad in data:
+        open_trad[trad['symbol']] = trad
+
+    return open_trad
+
+
+def get_futuer_top_symbols(limit,excluded_symbols):
+    
+    response = requests.get(get_futuer_symbol_url, headers=headers)
+    data =response.json()
+    # data =json.dumps(response.json(), indent=4)
+
+    # print(data)
+    top_symbols=[]
+    for symbol in data:
+        
+        if symbol['symbol'] not in excluded_symbols:
+            top_symbols.append(symbol['symbol'])
+            
+        if len(top_symbols) >= limit:
+            break
+    return top_symbols

@@ -29,13 +29,13 @@ client = Client(API_KEY,API_SECRET,requests_params={'timeout':90})
 
 # client.futures_account_balance()
 current_prices = {}
-active_trades = request_load.get_open_trad()
+active_trades = request_load.get_futuer_open_trad()
 # إدارة المحفظة 0
-# balance = helper.get_futuer_usdt_balance(client) # الرصيد المبدئي للبوت
-balance = 3# الرصيد المبدئي للبوت
+balance = helper.get_futuer_usdt_balance(client) # الرصيد المبدئي للبوت
+# balance = 3# الرصيد المبدئي للبوت
 
-investment=1.5 # حجم كل صفقة
-base_profit_target=0.015 # نسبة الربح
+investment=0.5 # حجم كل صفقة
+base_profit_target=0.01 # نسبة الربح
 # base_profit_target=0.005 # نسبة الربح
 base_stop_loss=0.02 # نسبة الخسارة
 # base_stop_loss=0.000 # نسبة الخسارة
@@ -48,21 +48,20 @@ analize_period=120
 start_date= '3 hours ago UTC'
 
 
-leverage = 5   # الرافعة المالية
+leverage = 20   # الرافعة المالية
 
 
 excluded_symbols =['BONKUSDT','LUNCUSDT']  # قائمة العملات المستثناة بسبب أخطاء متكررة
-symbols_to_trade =request_load.get_top_symbols(count_top_symbols ,excluded_symbols)
+symbols_to_trade =request_load.get_futuer_top_symbols(count_top_symbols ,excluded_symbols)
 last_trade_time = {}
 
-top_symbols=request_load.get_top_symbols(count_top_symbols ,excluded_symbols)
+top_symbols=request_load.get_futuer_top_symbols(count_top_symbols ,excluded_symbols)
 
 
 _symbols = client.futures_exchange_info()['symbols']
 valid_symbols = [s['symbol'] for s in _symbols]
 
-
-
+MAX_POSITIONS = 5
 
 
 
@@ -85,7 +84,10 @@ def can_trade(symbol):
 
 
 def open_futures_trade(symbol, investment, leverage):
-    global base_profit_target, base_stop_loss, active_trades
+    global base_profit_target, base_stop_loss, active_trades, balance
+    if get_open_positions_count(client) >= MAX_POSITIONS:
+        return
+    
     if balance < investment:
         # print(f"{datetime.now()} - {symbol} -الرصيد الحالي غير كافٍ لفتح صفقة جديدة.")
         return
@@ -94,6 +96,7 @@ def open_futures_trade(symbol, investment, leverage):
     # print(f"لا يجب شراء {symbol} في الوقت الحالي ")
         return
     
+    time.sleep(3)
     try:
         # ضبط الرافعة المالية
         client.futures_change_leverage(symbol=symbol, leverage=leverage)
@@ -118,7 +121,6 @@ def open_futures_trade(symbol, investment, leverage):
             quantity=quantity
         )
 
-        print(f"تم فتح صفقة شراء {symbol} بنجاح!")
 
         # حساب سعر جني الأرباح
         target_price = adjust_futuser_price_precision(client, symbol, current_price * (1 + base_profit_target))
@@ -136,7 +138,9 @@ def open_futures_trade(symbol, investment, leverage):
             closePosition=True
         )
 
+        print(f"تم فتح صفقة شراء {symbol} بنجاح!")
         print(f"تم تحديد مستوى جني الأرباح عند {target_price}")
+        # print(f"تم تحديد مستوى جني الأرباح عند {target_price}")
 
         # client.futures_create_order(
         #     symbol=symbol,
@@ -155,15 +159,17 @@ def open_futures_trade(symbol, investment, leverage):
             'stop_price': stop_price,
             'start_time':str(datetime.fromtimestamp(time.time())),
             "timeout": timeout * 60,
-            "investment": investment
+            "investment": investment,
+            "is_futuer": True
         }
-        # order_response= request_load.create_trad(payload)
-        # active_trades = request_load.get_open_trad()
-
+        order_response= request_load.create_trad(payload)
+        active_trades = request_load.get_futuer_open_trad()
+        balance = helper.get_futuer_usdt_balance(client)
+        
         return payload
 
     except BinanceAPIException as e:
-        print(f"خطأ أثناء فتح الصفقة: {e}")
+        print(f"خطأ أثناء فتح الصفقة لعملة {symbol}: {e}")
         return None
 
 
@@ -230,10 +236,10 @@ def open_trade_with_dynamic_target(symbol, investment=2.5, base_profit_target=0.
         #     'investment': investment - commission
         # }
         order_response= request_load.create_trad(payload)
-        active_trades = request_load.get_open_trad()
+        active_trades = request_load.get_futuer_open_trad()
         if order_response:
             print(f"تم حفظ الصفقة بنجاح لعملة {symbol}")
-        # active_trades = request_load.get_open_trad()
+        # active_trades = request_load.get_futuer_open_trad()
         
         balance = helper.get_usdt_balance(client)
         last_trade_time[symbol] = time.time()  # Record the trade timestamp
@@ -328,7 +334,8 @@ def check_trade_conditions():
                 update_status = request_load.close_trad(trade)
 
                 earnings = trade['quantity'] * current_price - trade['initial_price'] * trade['quantity']
-                balance = helper.get_usdt_balance(client)
+                balance = helper.get_futuer_usdt_balance(client)
+
                 
                 print(f"{datetime.now()} - تم {result} الصفقة لـ {symbol} عند السعر {current_price} وربح {earnings}")
                 with open(csv_file, mode='a', newline='', encoding='utf-8') as file:
@@ -349,12 +356,12 @@ def check_trade_conditions():
 # تحديث قائمة الرموز بشكل دوري
 def update_symbols_periodically(interval=600):
     global symbols_to_trade,balance
-    # balance = helper.get_futuer_usdt_balance(client)
+    balance = helper.get_futuer_usdt_balance(client)
     print(f"الرصيد المتبقي {balance}")
 
     print()
     while True:
-        symbols_to_trade = request_load.get_top_symbols(count_top_symbols,excluded_symbols)
+        symbols_to_trade = request_load.get_futuer_top_symbols(count_top_symbols,excluded_symbols)
         print(f"{datetime.now()} - تم تحديث قائمة العملات للتداول: {symbols_to_trade}")
         time.sleep(interval)
 
@@ -402,7 +409,7 @@ def monitor_trades():
 def run_bot():
     global symbols_to_trade
 
-    symbols_to_trade = request_load.get_top_symbols(count_top_symbols,excluded_symbols)
+    symbols_to_trade = request_load.get_futuer_top_symbols(count_top_symbols,excluded_symbols)
     print(symbols_to_trade)
     symbol_update_thread = threading.Thread(target=update_symbols_periodically, args=(600,))
     symbol_update_thread.start()
@@ -418,7 +425,7 @@ def run_bot():
     
 if __name__ == "__main__":
     run_bot()
-    print(balance)
+    # print(get_open_positions_count(client))
             
             
     print("Bot is turn of")

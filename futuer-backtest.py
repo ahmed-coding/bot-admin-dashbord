@@ -302,7 +302,7 @@ excel.loc[len(excel.index)] = ['Total', excel['Return'].sum(), excel['Trades'].s
 
 # excel.to_excel('result.xlsx')
 
-excel.to_csv('result.csv')
+excel.to_csv('futuer_result.csv')
 
 
 # copy_excel= open('result.csv',)
@@ -311,4 +311,4 @@ excel.to_csv('result.csv')
 # excel = pd.DataFrame(pd.read_csv('result.csv'))
 # excel.columns = ["index",'Symbol', 'Return', 'Trades', 'Win Rate', 'Best Trade', 'Worst Trade','Max Duration','Avg Duration']
 # excel.loc[len(excel.index)] = ['','Total', excel['Return'].sum(), excel['Trades'].sum(), '', '', '','', '']
-# excel.to_csv('result.csv')
+# excel.to_csv('futuer_result.csv')

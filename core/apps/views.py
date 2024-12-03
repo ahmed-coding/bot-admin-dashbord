@@ -19,14 +19,23 @@ class SymbolView(viewsets.ModelViewSet):
     queryset = models.Symbol.objects.filter(win_rate__gt=70).order_by('avg_duration')
     # queryset = models.Symbol.objects.all().order_by('avg_duration')
 
+class FutuerSymbolView(viewsets.ModelViewSet):
+    search_fields = 'symbol'
+    serializer_class = serializers.SymbolSerializers
+    filter_backends = [DjangoFilterBackend,
+                       filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['symbol', 'win_rate']
+    ordering_fields = '__all__'
+    queryset = models.FSymbol.objects.filter(win_rate__gt=70).order_by('avg_duration')
+    # queryset = models.Symbol.objects.all().order_by('avg_duration')
 
 
 
 class TradeView(viewsets.ModelViewSet):
-    search_fields = ['is_open', 'symbol']
+    search_fields = ['is_open', 'symbol','is_futuer']
     serializer_class = serializers.TradeSerializers
     filter_backends = [DjangoFilterBackend,
                        filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['symbol', "is_open"]
+    filterset_fields = ['symbol', "is_open",'is_futuer']
     ordering_fields = '__all__'
     queryset = models.Trade.objects.all()
