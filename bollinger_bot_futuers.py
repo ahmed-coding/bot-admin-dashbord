@@ -29,7 +29,7 @@ client = Client(API_KEY,API_SECRET,requests_params={'timeout':90})
 
 # client.futures_account_balance()
 current_prices = {}
-active_trades = request_load.get_futuer_open_trad()
+active_trades = helper.get_futuer_active_trades(client)
 # إدارة المحفظة 0
 balance = helper.get_futuer_usdt_balance(client) # الرصيد المبدئي للبوت
 # balance = 3# الرصيد المبدئي للبوت
@@ -163,7 +163,7 @@ def open_futures_trade(symbol, investment, leverage):
             "is_futuer": True
         }
         order_response= request_load.create_trad(payload)
-        active_trades = request_load.get_futuer_open_trad()
+        active_trades = helper.get_futuer_active_trades(client)
         balance = helper.get_futuer_usdt_balance(client)
         
         return payload
@@ -236,10 +236,10 @@ def open_trade_with_dynamic_target(symbol, investment=2.5, base_profit_target=0.
         #     'investment': investment - commission
         # }
         order_response= request_load.create_trad(payload)
-        active_trades = request_load.get_futuer_open_trad()
+        active_trades = helper.get_futuer_active_trades(client)
         if order_response:
             print(f"تم حفظ الصفقة بنجاح لعملة {symbol}")
-        # active_trades = request_load.get_futuer_open_trad()
+        # active_trades = helper.get_futuer_active_trades(client)
         
         balance = helper.get_usdt_balance(client)
         last_trade_time[symbol] = time.time()  # Record the trade timestamp

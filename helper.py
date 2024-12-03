@@ -265,3 +265,16 @@ def get_open_positions_count(client):
     # print(f"عدد الصفقات المفتوحة حاليًا: {len(open_positions)}")
 
     return len(open_positions)
+
+def get_futuer_active_trades(client):
+    """
+    استرجاع الرموز التي تحتوي على صفقات مفتوحة.
+    """
+    active_trades = set()
+    positions = client.futures_position_information()
+    for position in positions:
+        symbol = position['symbol']
+        position_amt = float(position['positionAmt'])  # الكمية المفتوحة
+        if position_amt != 0:  # إذا كانت الكمية ليست صفراً، يعني أن هناك صفقة مفتوحة
+            active_trades.add(symbol)
+    return active_trades
