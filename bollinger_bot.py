@@ -95,7 +95,7 @@ def open_trade_with_dynamic_target(symbol, investment=2.5, base_profit_target=0.
     # avg_volatility = statistics.stdev(closing_prices)
 
     # Ensure both strategies' conditions are met before opening a trade
-    if not should_open_trade(client=client, symbol=symbol):
+    if not should_open_trade(client=client, symbol=symbol,intervel=klines_interval,limit=analize_period):
         # print(f"لا يجب شراء {symbol} في الوقت الحالي ")
         return
 
@@ -270,7 +270,7 @@ def update_prices():
                 current_prices[symbol] = float(client.get_symbol_ticker(symbol=symbol)['price'])
                 # print(f"تم تحديث السعر لعملة {symbol}: {current_prices[symbol]}")
                 if symbol not in active_trades and check_btc:
-                    open_trade_with_dynamic_target(symbol,investment=investment,base_profit_target=base_profit_target,base_stop_loss=base_stop_loss,timeout=timeout, is_active=False)
+                    open_trade_with_dynamic_target(symbol,investment=investment,base_profit_target=base_profit_target,base_stop_loss=base_stop_loss,timeout=timeout)
             except BinanceAPIException as e:
                 print(f"خطأ في تحديث السعر لـ {symbol}: {e}")
                 if 'NOTIONAL' in str(e) or 'Invalid symbol' in str(e):
@@ -293,7 +293,7 @@ def run_bot():
     global symbols_to_trade
 
     symbols_to_trade = request_load.get_top_symbols(count_top_symbols,excluded_symbols)
-    print(symbols_to_trade)
+    # print(symbols_to_trade)
     symbol_update_thread = threading.Thread(target=update_symbols_periodically, args=(600,))
     symbol_update_thread.start()
     # print(active_trades)

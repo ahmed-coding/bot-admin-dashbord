@@ -90,7 +90,7 @@ def open_futures_trade(symbol, investment, leverage):
         # print(f"{datetime.now()} - {symbol} -الرصيد الحالي غير كافٍ لفتح صفقة جديدة.")
         return
     
-    if not should_open_futuer_trade(client=client, symbol=symbol):
+    if not should_open_futuer_trade(client=client, symbol=symbol, intervel=klines_interval,limit=analize_period):
     # print(f"لا يجب شراء {symbol} في الوقت الحالي ")
         return
     
@@ -138,14 +138,14 @@ def open_futures_trade(symbol, investment, leverage):
 
         print(f"تم تحديد مستوى جني الأرباح عند {target_price}")
 
-        client.futures_create_order(
-            symbol=symbol,
-            side="SELL",
-            type="STOP_MARKET",
-            stopPrice=stop_loss_price,
-            closePosition=True
-        )
-        print(f"تم تعيين وقف الخسارة عند {stop_loss_price}.")
+        # client.futures_create_order(
+        #     symbol=symbol,
+        #     side="SELL",
+        #     type="STOP_MARKET",
+        #     stopPrice=stop_loss_price,
+        #     closePosition=True
+        # )
+        # print(f"تم تعيين وقف الخسارة عند {stop_loss_price}.")
         # تسجيل البيانات في حال أردت المتابعة لاحقًا
         payload = {
             "symbol": symbol,

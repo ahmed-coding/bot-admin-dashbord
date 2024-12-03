@@ -14,8 +14,9 @@ class Command(BaseCommand):
             with open(csv_file, 'r') as file:
                 reader = csv.DictReader(file)
                 Symbol.objects.all().delete()
+                symbol_list = []
                 for row in reader:
-                    Symbol.objects.update_or_create(
+                    symbol=Symbol(
                         symbol=row['Symbol'],
                         return_value=float(row['Return']),
                         trades=int(row['Trades']),
@@ -25,6 +26,9 @@ class Command(BaseCommand):
                         max_duration=row['Max Duration'],
                         avg_duration=row['Avg Duration']
                     )
+                    symbol_list.append(symbol)
+                    
+                Symbol.objects.bulk_create(symbol_list)
             self.stdout.write(self.style.SUCCESS(f"Data imported successfully from {csv_file}"))
         except Exception as e:
             self.stderr.write(self.style.ERROR(f"Error importing data: {e}"))

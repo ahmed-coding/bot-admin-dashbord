@@ -27,7 +27,7 @@ active_trades = {}
 balance = 25 # الرصيد المبدئي للبوت
 investment=6 # حجم كل صفقة
 base_profit_target=0.005 # نسبة الربح
-# base_profit_target=0.005ar # نسبة الربح
+# base_profit_target=0.005 # نسبة الربح
 # base_stop_loss=0.1 # نسبة الخسارة
 # base_stop_loss=0.000 # نسبة الخسارة
 timeout=60 # وقت انتهاء وقت الصفقة
@@ -36,7 +36,7 @@ excluded_symbols = set()  # قائمة العملات المستثناة بسب�
 # bot_settings=Settings()
 symbols_to_trade =[]
 last_trade_time = {}
-klines_interval=Client.KLINE_INTERVAL_5MINUTE
+klines_interval=Client.KLINE_INTERVAL_3MINUTE
 klines_limit=1
 top_symbols=[]
 count_top_symbols=70
@@ -123,14 +123,14 @@ black_list=[
 
 
 def get_top_symbols(limit=20, profit_target=0.007, rsi_threshold=70):
-    tickers = client.get_ticker()
+    tickers = client.futures_ticker()
     exchange_info = client.futures_exchange_info()  # جلب معلومات التداول
     valid_symbols = {info['symbol'] for info in exchange_info['symbols']}  # الرموز المسموح بها
     sorted_tickers = sorted(tickers, key=lambda x: float(x['quoteVolume']), reverse=True)
     top_symbols = []
     
     for ticker in sorted_tickers:
-        if ticker['symbol'].endswith("USDT") and ticker['symbol'] not in black_list:  # تحقق من صلاحية الرمز
+        if ticker['symbol'].endswith("USDT") and ticker['symbol'] in valid_symbols:  # تحقق من صلاحية الرمز
             try:
                 klines = client.get_klines(symbol=ticker['symbol'], interval=klines_interval, limit=klines_limit)
                 if klines is None or klines == []:
@@ -168,7 +168,7 @@ def calculate_rsi(data, period=14):
 # تعريف الاستراتيجية
 class RSIStrategy(Strategy):
     rsi_period = 8  # الفترة الزمنية لمؤشر RSI
-    profit_target = 0.01  # الربح المستهدف كنسبة مئوية
+    profit_target = 0.015  # الربح المستهدف كنسبة مئوية
     stop_loss = 0.02  # إيقاف الخسارة كنسبة مئوية
 
     def init(self):
@@ -235,7 +235,7 @@ def fetch_binance_data(symbol, interval, start_date, end_date):
     # client = Client(api_key="your_api_key", api_secret="your_api_secret")
     # klines = client.get_historical_klines(symbol, interval, start_date)
 
-    klines = client.get_klines(symbol=symbol, interval=interval, limit=120)
+    klines = client.futures_klines(symbol=symbol, interval=interval, limit=120)
     data = pd.DataFrame(klines, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume', 
                                          'close_time', 'quote_asset_volume', 'number_of_trades', 
                                          'taker_buy_base', 'taker_buy_quote', 'ignore'])

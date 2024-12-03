@@ -59,9 +59,9 @@ def check_bnb_balance(client,min_bnb_balance=0.0001):  # تقليل الحد ا�
 start_date='3 hours ago UTC'
 
 # دالة لجلب البيانات من Binance
-def fetch_binance_data(client,symbol, interval, start_date):
+def fetch_binance_data(client,symbol, interval, limit):
     # klines =  client.get_historical_klines(symbol, interval, start_date)
-    klines = client.get_klines(symbol=symbol, interval=interval, limit= analize_period)
+    klines = client.get_klines(symbol=symbol, interval=interval, limit= limit)
 
     data = pd.DataFrame(klines, columns=[
         'timestamp', 'open', 'high', 'low', 'close', 'volume', 
@@ -73,9 +73,9 @@ def fetch_binance_data(client,symbol, interval, start_date):
 
 
 
-def fetch_binance_futuer_data(client,symbol, interval, start_date):
+def fetch_binance_futuer_data(client,symbol, interval, limit):
     # klines =  client.get_historical_klines(symbol, interval, start_date)
-    klines = client.futures_klines(symbol=symbol, interval=interval, limit= analize_period)
+    klines = client.futures_klines(symbol=symbol, interval=interval, limit= limit)
 
     data = pd.DataFrame(klines, columns=[
         'timestamp', 'open', 'high', 'low', 'close', 'volume', 
@@ -129,6 +129,30 @@ def should_open_trade(client,symbol):
     return False        
         
 
+
+def should_open_trade(client,symbol,intervel, limit):
+    data = fetch_binance_data(client, symbol, intervel, limit)
+    
+    # if data is None or len(data) < 20:
+    #     print(f"بيانات غير كافية لـ {symbol}")
+    #     return
+    
+    bol_h_band = bol_h(data)
+    bol_l_band = bol_l(data)
+    close_prices = data['close']
+
+    # فتح صفقة شراء إذا اخترق السعر الحد السفلي
+    if close_prices.iloc[-3] > bol_l_band.iloc[-3] and close_prices.iloc[-2] < bol_l_band.iloc[-2]:
+        return True
+
+    # إغلاق صفقة إذا اخترق السعر الحد العلوي
+    if close_prices.iloc[-3] < bol_h_band.iloc[-3] and close_prices.iloc[-2] > bol_h_band.iloc[-2]:
+        return False
+    
+    
+    return False        
+        
+
 def should_close_trade(client,symbol):
     data = fetch_binance_data(client, symbol, Client.KLINE_INTERVAL_3MINUTE, start_date)
     
@@ -158,6 +182,29 @@ def should_close_trade(client,symbol):
 
 def should_open_futuer_trade(client,symbol):
     data = fetch_binance_futuer_data(client, symbol, Client.KLINE_INTERVAL_3MINUTE, start_date)
+    
+    # if data is None or len(data) < 20:
+    #     print(f"بيانات غير كافية لـ {symbol}")
+    #     return
+    
+    bol_h_band = bol_h(data)
+    bol_l_band = bol_l(data)
+    close_prices = data['close']
+
+    # فتح صفقة شراء إذا اخترق السعر الحد السفلي
+    if close_prices.iloc[-3] > bol_l_band.iloc[-3] and close_prices.iloc[-2] < bol_l_band.iloc[-2]:
+        return True
+
+    # إغلاق صفقة إذا اخترق السعر الحد العلوي
+    if close_prices.iloc[-3] < bol_h_band.iloc[-3] and close_prices.iloc[-2] > bol_h_band.iloc[-2]:
+        return False
+    
+    
+    return False        
+        
+
+def should_open_futuer_trade(client,symbol,intervel, limit):
+    data = fetch_binance_futuer_data(client, symbol, intervel, limit=limit)
     
     # if data is None or len(data) < 20:
     #     print(f"بيانات غير كافية لـ {symbol}")
