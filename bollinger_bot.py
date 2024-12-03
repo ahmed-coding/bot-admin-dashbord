@@ -67,9 +67,10 @@ def can_trade(symbol):
 
 
 
-def open_trade_with_dynamic_target(symbol, investment=2.5, base_profit_target=0.002, base_stop_loss=0.0005, timeout=30):
+def open_trade_with_dynamic_target(symbol, investment=2.5, base_profit_target=0.002, base_stop_loss=0.0005, timeout=30,is_active=True):
     global balance, commission_rate, active_trades
-    
+    if not is_active:
+        return
     # trading_status= bot_settings.trading_status()
     # if trading_status =="0":
     #     # print("the trading is of can't open more trad")
@@ -269,7 +270,7 @@ def update_prices():
                 current_prices[symbol] = float(client.get_symbol_ticker(symbol=symbol)['price'])
                 # print(f"تم تحديث السعر لعملة {symbol}: {current_prices[symbol]}")
                 if symbol not in active_trades and check_btc:
-                    open_trade_with_dynamic_target(symbol,investment=investment,base_profit_target=base_profit_target,base_stop_loss=base_stop_loss,timeout=timeout)
+                    open_trade_with_dynamic_target(symbol,investment=investment,base_profit_target=base_profit_target,base_stop_loss=base_stop_loss,timeout=timeout, is_active=False)
             except BinanceAPIException as e:
                 print(f"خطأ في تحديث السعر لـ {symbol}: {e}")
                 if 'NOTIONAL' in str(e) or 'Invalid symbol' in str(e):
