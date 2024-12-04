@@ -63,7 +63,7 @@ __active_symbol = {}
 _symbols = client.futures_exchange_info()['symbols']
 valid_symbols = [s['symbol'] for s in _symbols]
 
-MAX_POSITIONS = 12
+MAX_POSITIONS = 15
 
 
 
@@ -92,6 +92,7 @@ def open_futures_trade(symbol, investment, leverage):
     
     
     if symbol in active_trades:
+        print(f"هناك صفقة مفتوحة من قبل لعملة {symbol}")
         return
     if balance < investment:
         # print(f"{datetime.now()} - {symbol} -الرصيد الحالي غير كافٍ لفتح صفقة جديدة.")
@@ -116,23 +117,23 @@ def open_futures_trade(symbol, investment, leverage):
         current_price = float(ticker['price'])
         # price = float(ticker['price'])
         # qty_precision = get_qty_precision(symbol)
-        price_precision = get_price_precision(symbol)
+        price_precision = get_price_precision(client,symbol)
         # qty = round(leverage/price, qty_precision)
         
         # حساب الكمية بالدقة المناسبة
         _quantity = (investment / current_price) * leverage
-        # quantity_precision = helper.adjust_futuer_quantity(client, symbol,((investment/ current_price)* leverage))
+        # quantity_precision = helper.get_qty_precision(client, symbol,)
         # quantity = round(_quantity, quantity_precision)
         quantity = helper.adjust_futuer_quantity(client, symbol,((investment * leverage )/ current_price))
 
-        # _target_price = current_price * (1 + base_profit_target)
-        # _stop_loss_price = current_price * (1 - base_stop_loss)
+        _target_price = current_price * (1 + base_profit_target)
+        _stop_loss_price = current_price * (1 - base_stop_loss)
         # price_precision = helper.adjust_futuser_price_precision(client, symbol, current_price * (1 + base_profit_target))
         target_price = round(_target_price, price_precision)
         stop_loss_price = round(_stop_loss_price, price_precision)
         
-        _target_price = current_price * (1 + base_profit_target)
-        _stop_loss_price = current_price * (1 - base_stop_loss)
+        # _target_price = current_price * (1 + base_profit_target)
+        # _stop_loss_price = current_price * (1 - base_stop_loss)
         # price_precision = helper.adjust_futuser_price_precision(client, symbol, current_price * (1 + base_profit_target))
         # target_price = helper.adjust_futuser_price_precision(client, symbol, current_price * (1 + base_profit_target))
         # stop_loss_price = helper.adjust_futuser_price_precision(client, symbol, current_price * (1 - base_profit_target))
