@@ -29,7 +29,7 @@ client = Client(API_KEY,API_SECRET,requests_params={'timeout':90})
 
 # client.futures_account_balance()
 current_prices = {}
-_active_trades = helper.get_futuer_active_trades(client)
+# _active_trades = helper.get_futuer_active_trades(client)
 active_trades = request_load.get_futuer_open_trad()
 
 # إدارة المحفظة 0
@@ -46,7 +46,7 @@ commission_rate = 0.002 # نسبة العمولة للمنصة
 klines_interval=Client.KLINE_INTERVAL_3MINUTE
 klines_limit=14
 count_top_symbols=200
-analize_period=80
+analize_period=120
 start_date= '3 hours ago UTC'
 
 
@@ -59,11 +59,11 @@ last_trade_time = {}
 
 top_symbols=request_load.get_futuer_top_symbols(count_top_symbols ,excluded_symbols)
 
-
+__active_symbol = {}
 _symbols = client.futures_exchange_info()['symbols']
 valid_symbols = [s['symbol'] for s in _symbols]
 
-MAX_POSITIONS = 10
+MAX_POSITIONS = 15
 
 
 
@@ -116,12 +116,13 @@ def open_futures_trade(symbol, investment, leverage):
         
         # حساب الكمية بالدقة المناسبة
         _quantity = (investment / current_price) * leverage
-        quantity_precision = get_qty_precision(client, symbol)
-        quantity = round(_quantity, quantity_precision)
+        quantity_precision = helper.adjust_futuer_quantity(client, symbol,((investment/ price)* leverage))
+        # quantity = round(_quantity, quantity_precision)
+        quantity = helper.adjust_futuer_quantity(client, symbol,((investment/ price)* leverage))
 
         _target_price = current_price * (1 + base_profit_target)
         _stop_loss_price = current_price * (1 - base_stop_loss)
-        price_precision = get_price_precision(client, symbol)
+        price_precision = helper.get_precision(client, symbol)
         target_price = round(_target_price, price_precision)
         stop_loss_price = round(_stop_loss_price, price_precision)
         
@@ -179,8 +180,10 @@ def open_futures_trade(symbol, investment, leverage):
         }
         order_response= request_load.create_trad(payload)
         _active_trades = helper.get_futuer_active_trades(client)
-        # active_trades = request_load.get_futuer_open_trad()
+        active_trades = request_load.get_futuer_open_trad()
         balance = helper.get_futuer_usdt_balance(client)
+        helper.update_futuer_active_trades(client)
+        __active_symbol[symbol] = payload
         print(f"عدد الصفقات المفتوحة حاليًا: {helper.get_open_positions_count(client)}")
 
         return payload
@@ -305,11 +308,9 @@ def sell_trade(symbol, trade_quantity):
         return 0
 
 def check_trade_conditions():
-    global balance
+    global balance,active_trades
     
-    if True:
-        return
-    for symbol, _trade in list(_active_trades.items()):
+    for symbol, trade in list(active_trades.items()):
         try:
             
             ticker = client.futures_symbol_ticker(symbol=symbol)
@@ -321,7 +322,7 @@ def check_trade_conditions():
         except BinanceAPIException as e:
             print(f"خطأ في تحديث السعر لـ {symbol}: {e}")
             continue
-        trade = active_trades[symbol]
+        # trade = active_trades[symbol]
         # Check for target, stop loss, or timeout conditions
         result = None
         sold_quantity = 0
@@ -404,7 +405,7 @@ def update_prices():
                 current_prices[symbol] = current_price
 
                 # # print(f"تم تحديث السعر لعملة {symbol}: {current_prices[symbol]}")
-                if symbol not in active_trades and check_btc:
+                if symbol not in __active_symbol and check_btc:
                     open_futures_trade(symbol,investment=investment,leverage=leverage)
             except BinanceAPIException as e:
                 print(f"خطأ في تحديث السعر لـ {symbol}: {e}")
@@ -427,7 +428,7 @@ def monitor_trades():
 def run_bot():
     global symbols_to_trade
     print(f"عدد الصفقات المفتوحة حاليًا: {helper.get_open_positions_count(client)}")
-
+    helper.update_futuer_active_trades(client)
     symbols_to_trade = request_load.get_futuer_top_symbols(count_top_symbols,excluded_symbols)
     print(symbols_to_trade)
     symbol_update_thread = threading.Thread(target=update_symbols_periodically, args=(600,))
@@ -444,6 +445,7 @@ def run_bot():
     
 if __name__ == "__main__":
     run_bot()
+    update_futuer_active_trades(client)
     # print(get_open_positions_count(client))
             
             

@@ -6,7 +6,7 @@ import ta
 import decimal
 from binance.client import Client
 from decimal import Decimal, ROUND_DOWN
-
+import request_load
 
 start_date='3 hours ago UTC'
 analize_period=80
@@ -259,12 +259,15 @@ def get_futuer_lot_size(client, symbol):
             return step_size
     return None
 
+
+
 def get_open_positions_count(client):
     positions = client.futures_position_information()
     open_positions = [position for position in positions if float(position['positionAmt']) != 0.0]
     # print(f"عدد الصفقات المفتوحة حاليًا: {len(open_positions)}")
 
     return len(open_positions)
+
 
 def get_futuer_active_trades(client):
     """
@@ -286,6 +289,23 @@ def get_futuer_active_trades(client):
                 "markPrice": float(position['markPrice']),
             }
     return active_trades
+
+def update_futuer_active_trades(client):
+    """
+    استرجاع الصفقات المفتوحة على Binance Futures وتحديث الحالة في Django.
+    """
+    active_trade = request_load.get_futuer_open_trad()
+    positions = client.futures_position_information()  # جلب جميع المراكز المفتوحة
+    for position in positions:
+        symbol = position['symbol']
+        position_amt = float(position['positionAmt'])  # الكمية المفتوحة
+        if position_amt == 0:  # إذا كانت الكمية ليست صفرًا، فهذا يعني وجود صفقة مفتوحة
+            for trad in active_trade:
+                if trad['symbol'] == symbol:
+                    update_status = request_load.close_trad(trad)
+                    print(f"تم تحديث الحالة لصفقة {symbol}")
+                    break  # التأكد من التوقف بعد التحديث
+
 
 
 def get_price_precision(client, symbol):
@@ -309,3 +329,16 @@ def get_qty_precision(client, symbol):
                     # نعيد الدقة الخاصة بالكمية بناءً على stepSize
                     step_size = filter['stepSize']
                     return len(step_size.split('1')[1]) if '1' in step_size else 0
+
+
+def get_precision(client:Client,symbol):
+    resp = client.get_symbol_info(symbol=symbol)
+            # نبحث عن الفلتر المناسب لسعر السوق
+    return int(resp['baseAssetPrecision'])
+            
+
+            # for filter in elem['filters']:
+            #     if filter['filterType'] == 'PRICE_FILTER':
+            #         # نعيد الدقة الخاصة بالسعر
+            #         tick_size = filter['tickSize']
+            #         return len(tick_size.split('1')[1]) if '1' in tick_size else 0
