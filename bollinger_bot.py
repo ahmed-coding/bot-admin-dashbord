@@ -39,7 +39,7 @@ commission_rate = 0.002 # نسبة العمولة للمنصة
 klines_interval=Client.KLINE_INTERVAL_3MINUTE
 klines_limit=14
 count_top_symbols=200
-analize_period=120
+analize_period=80
 start_date= '3 hours ago UTC'
 
 excluded_symbols = set()  # قائمة العملات المستثناة بسبب أخطاء متكررة
@@ -67,7 +67,7 @@ def can_trade(symbol):
 
 
 
-def open_trade_with_dynamic_target(symbol, investment=2.5, base_profit_target=0.002, base_stop_loss=0.0005, timeout=30,is_active=False):
+def open_trade_with_dynamic_target(symbol, investment=2.5, base_profit_target=0.002, base_stop_loss=0.0005, timeout=30,is_active=True):
     global balance, commission_rate, active_trades
     if not is_active:
         return

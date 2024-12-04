@@ -36,8 +36,8 @@ active_trades = request_load.get_futuer_open_trad()
 balance = helper.get_futuer_usdt_balance(client) # الرصيد المبدئي للبوت
 # balance = 3# الرصيد المبدئي للبوت
 
-investment=0.5 # حجم كل صفقة
-base_profit_target=0.01 # نسبة الربح
+investment=1 # حجم كل صفقة
+base_profit_target=0.0092 # نسبة الربح
 # base_profit_target=0.005 # نسبة الربح
 base_stop_loss=0.03 # نسبة الخسارة
 # base_stop_loss=0.000 # نسبة الخسارة
@@ -46,11 +46,11 @@ commission_rate = 0.002 # نسبة العمولة للمنصة
 klines_interval=Client.KLINE_INTERVAL_3MINUTE
 klines_limit=14
 count_top_symbols=200
-analize_period=80
+analize_period=120
 start_date= '3 hours ago UTC'
 
 
-leverage = 20   # الرافعة المالية
+leverage = 20   # ال80رافعة المالية
 
 
 excluded_symbols =[]  # قائمة العملات المستثناة بسبب أخطاء متكررة
@@ -63,7 +63,7 @@ __active_symbol = {}
 _symbols = client.futures_exchange_info()['symbols']
 valid_symbols = [s['symbol'] for s in _symbols]
 
-MAX_POSITIONS = 20
+MAX_POSITIONS = 12
 
 
 
@@ -120,8 +120,8 @@ def open_futures_trade(symbol, investment, leverage):
         # quantity = round(_quantity, quantity_precision)
         quantity = helper.adjust_futuer_quantity(client, symbol,((investment/ price)* leverage))
 
-        _target_price = current_price * (1 - base_profit_target)
-        _stop_loss_price = current_price * (1 + base_stop_loss)
+        _target_price = current_price * (1 + base_profit_target)
+        _stop_loss_price = current_price * (1 - base_stop_loss)
         price_precision = helper.get_precision(client, symbol)
         target_price = round(_target_price, price_precision)
         stop_loss_price = round(_stop_loss_price, price_precision)
@@ -136,7 +136,8 @@ def open_futures_trade(symbol, investment, leverage):
             "investment": investment,
             "is_futuer": True
         }
-        
+        __active_symbol[symbol] = payload
+
         
         #         # تنفيذ أمر شراء بالسوق
         # order = client.futures_create_order(
@@ -197,12 +198,12 @@ def open_futures_trade(symbol, investment, leverage):
             "investment": investment,
             "is_futuer": True
         }
-        order_response= request_load.create_trad(payload)
+        # order_response= request_load.create_trad(payload)
         _active_trades = helper.get_futuer_active_trades(client)
         active_trades = request_load.get_futuer_open_trad()
         balance = helper.get_futuer_usdt_balance(client)
         helper.update_futuer_active_trades(client)
-        __active_symbol[symbol] = payload
+        # __active_symbol[symbol] = payload
         print(f"عدد الصفقات المفتوحة حاليًا: {helper.get_open_positions_count(client)}")
 
         return payload
@@ -274,10 +275,10 @@ def open_trade_with_dynamic_target(symbol, investment=2.5, base_profit_target=0.
         #     'timeout': timeout * 60,
         #     'investment': investment - commission
         # }
-        order_response= request_load.create_trad(payload)
-        active_trades = request_load.get_futuer_open_trad()
-        if order_response:
-            print(f"تم حفظ الصفقة بنجاح لعملة {symbol}")
+        # order_response= request_load.create_trad(payload)
+        # active_trades = request_load.get_futuer_open_trad()
+        # if order_response:
+        #     print(f"تم حفظ الصفقة بنجاح لعملة {symbol}")
         # _active_trades = helper.get_futuer_active_trades(client)
         
         balance = helper.get_usdt_balance(client)
@@ -405,10 +406,13 @@ def update_symbols_periodically(interval=600):
 
 # مراقبة تحديث الأسعار وفتح الصفقات
 def update_prices():
-    global symbols_to_trade, excluded_symbols
+    global symbols_to_trade, excluded_symbols,active_trades
+    active_trades = request_load.get_futuer_open_trad()
 
     while True:
         # check_btc= check_btc_price()
+        active_trades = request_load.get_futuer_open_trad()
+
         check_btc=True
         for symbol in symbols_to_trade:
             if symbol in excluded_symbols or symbol not in valid_symbols :
@@ -424,13 +428,14 @@ def update_prices():
                 current_prices[symbol] = current_price
 
                 # # print(f"تم تحديث السعر لعملة {symbol}: {current_prices[symbol]}")
-                if symbol not in __active_symbol and check_btc:
+                if symbol not in active_trades and check_btc:
                     open_futures_trade(symbol,investment=investment,leverage=leverage)
             except BinanceAPIException as e:
                 print(f"خطأ في تحديث السعر لـ {symbol}: {e}")
                 if 'NOTIONAL' in str(e) or 'Invalid symbol' in str(e):
                     excluded_symbols.append(symbol)  # Exclude symbols causing frequent errors
                     time.sleep(0.1)
+        time.sleep(0.1)
 
 # مراقبة حالة الصفقات المغلقة
 def monitor_trades():

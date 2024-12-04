@@ -40,7 +40,7 @@ klines_interval=Client.KLINE_INTERVAL_3MINUTE
 klines_limit=1
 top_symbols=[]
 count_top_symbols=70
-analize_period=80
+analize_period=120
 black_list=[
         # # 'XRPUSDT',
         # 'ETHUSDT', 'BTCUSDT', 'SOLUSDT', 'ENSUSDT', 'BNBUSDT', 'FILUSDT',
