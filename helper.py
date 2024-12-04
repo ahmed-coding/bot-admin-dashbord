@@ -296,16 +296,20 @@ def update_futuer_active_trades(client):
     """
     active_trade = request_load.get_futuer_open_trad()
     positions = client.futures_position_information()  # جلب جميع المراكز المفتوحة
-    for position in positions:
-        symbol = position['symbol']
-        position_amt = float(position['positionAmt'])  # الكمية المفتوحة
-        if position_amt == 0:  # إذا كانت الكمية ليست صفرًا، فهذا يعني وجود صفقة مفتوحة
-            for trad in active_trade:
-                if trad['symbol'] == symbol:
-                    update_status = request_load.close_trad(trad)
-                    print(f"تم تحديث الحالة لصفقة {symbol}")
-                    break  # التأكد من التوقف بعد التحديث
-
+    for symbol, trade in list(active_trade.items()):
+        # print(f"{symbol}")
+        for position in positions:
+            acive_symbol = position['symbol']
+            position_amt = float(position['positionAmt'])  # الكمية المفتوحة
+            # print(position['symbol'])
+            # print(acive_symbol)
+            if  position['symbol'] in symbol:
+                print(f"trad open for {acive_symbol} ")
+                continue
+            else:
+                update_status = request_load.close_trad(trade)
+                print(f"trad colse for {symbol}")
+                break
 
 
 def get_price_precision(client, symbol):

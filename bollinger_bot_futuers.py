@@ -90,6 +90,9 @@ def open_futures_trade(symbol, investment, leverage):
     if get_open_positions_count(client) >= MAX_POSITIONS:
         return
     
+    
+    if symbol in active_trades:
+        return
     if balance < investment:
         # print(f"{datetime.now()} - {symbol} -الرصيد الحالي غير كافٍ لفتح صفقة جديدة.")
         return
@@ -107,24 +110,33 @@ def open_futures_trade(symbol, investment, leverage):
         ticker = client.futures_symbol_ticker(symbol=symbol)
         
         if not ticker:
+            excluded_symbols.append(symbol)
             return
+        
         current_price = float(ticker['price'])
-        price = float(ticker['price'])
+        # price = float(ticker['price'])
         # qty_precision = get_qty_precision(symbol)
-        # price_precision = get_price_precision(symbol)
+        price_precision = get_price_precision(symbol)
         # qty = round(leverage/price, qty_precision)
         
         # حساب الكمية بالدقة المناسبة
         _quantity = (investment / current_price) * leverage
-        quantity_precision = helper.adjust_futuer_quantity(client, symbol,((investment/ price)* leverage))
+        # quantity_precision = helper.adjust_futuer_quantity(client, symbol,((investment/ current_price)* leverage))
         # quantity = round(_quantity, quantity_precision)
-        quantity = helper.adjust_futuer_quantity(client, symbol,((investment/ price)* leverage))
+        quantity = helper.adjust_futuer_quantity(client, symbol,((investment * leverage )/ current_price))
 
-        _target_price = current_price * (1 + base_profit_target)
-        _stop_loss_price = current_price * (1 - base_stop_loss)
-        price_precision = helper.get_precision(client, symbol)
+        # _target_price = current_price * (1 + base_profit_target)
+        # _stop_loss_price = current_price * (1 - base_stop_loss)
+        # price_precision = helper.adjust_futuser_price_precision(client, symbol, current_price * (1 + base_profit_target))
         target_price = round(_target_price, price_precision)
         stop_loss_price = round(_stop_loss_price, price_precision)
+        
+        _target_price = current_price * (1 + base_profit_target)
+        _stop_loss_price = current_price * (1 - base_stop_loss)
+        # price_precision = helper.adjust_futuser_price_precision(client, symbol, current_price * (1 + base_profit_target))
+        # target_price = helper.adjust_futuser_price_precision(client, symbol, current_price * (1 + base_profit_target))
+        # stop_loss_price = helper.adjust_futuser_price_precision(client, symbol, current_price * (1 - base_profit_target))
+        
         payload = {
             "symbol": symbol,
             "quantity": quantity,
@@ -411,7 +423,7 @@ def update_prices():
 
     while True:
         # check_btc= check_btc_price()
-        active_trades = request_load.get_futuer_open_trad()
+        # active_trades = request_load.get_futuer_open_trad()
 
         check_btc=True
         for symbol in symbols_to_trade:
@@ -429,6 +441,8 @@ def update_prices():
 
                 # # print(f"تم تحديث السعر لعملة {symbol}: {current_prices[symbol]}")
                 if symbol not in active_trades and check_btc:
+                    helper.update_futuer_active_trades(client)
+                    active_trades = request_load.get_futuer_open_trad()
                     open_futures_trade(symbol,investment=investment,leverage=leverage)
             except BinanceAPIException as e:
                 print(f"خطأ في تحديث السعر لـ {symbol}: {e}")
