@@ -30,7 +30,7 @@ active_trades = request_load.get_open_trad()
 # إدارة المحفظة 0
 balance = helper.get_usdt_balance(client) # الرصيد المبدئي للبوت
 investment=6 # حجم كل صفقة
-base_profit_target=0.015 # نسبة الربح
+base_profit_target=0.01 # نسبة الربح
 # base_profit_target=0.005 # نسبة الربح
 base_stop_loss=0.02 # نسبة الخسارة
 # base_stop_loss=0.000 # نسبة الخسارة
@@ -39,7 +39,7 @@ commission_rate = 0.002 # نسبة العمولة للمنصة
 klines_interval=Client.KLINE_INTERVAL_3MINUTE
 klines_limit=14
 count_top_symbols=200
-analize_period=120
+analize_period=80
 start_date= '3 hours ago UTC'
 
 excluded_symbols = set()  # قائمة العملات المستثناة بسبب أخطاء متكررة

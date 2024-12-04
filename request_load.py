@@ -11,7 +11,7 @@ end_point='http://127.0.0.1:8000/'
 # Spot
 create_trad_url =end_point+ "api/create-trade/"  # Replace with the actual endpoint
 update_trad_url =end_point+ "api/update-trade/"  # Replace with the actual endpoint
-get_trad_url =end_point+ "api/list-trade/?is_open=true"  # Replace with the actual endpoint
+get_trad_url =end_point+ "api/list-trade/?is_open=true&is_futuer=false"  # Replace with the actual endpoint
 
 # Futuer
 

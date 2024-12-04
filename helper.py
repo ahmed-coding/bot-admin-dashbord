@@ -106,7 +106,7 @@ def get_futuer_usdt_balance(client):
             print(f"الرصيد الإجمالي: {total_balance} USDT")
             print(f"الرصيد المتاح: {available_balance} USDT")
             
-    return available_balance - 7
+    return available_balance - 10
 
 def should_open_trade(client,symbol):
     data = fetch_binance_data(client, symbol, Client.KLINE_INTERVAL_3MINUTE, start_date)
@@ -268,13 +268,44 @@ def get_open_positions_count(client):
 
 def get_futuer_active_trades(client):
     """
-    استرجاع الرموز التي تحتوي على صفقات مفتوحة.
+    استرجاع الصفقات المفتوحة على Binance Futures
     """
-    active_trades = set()
-    positions = client.futures_position_information()
+    positions = client.futures_position_information()  # جلب جميع المراكز المفتوحة
+    active_trades = {}  # Dictionary للاحتفاظ بالمعلومات المفتوحة
+
     for position in positions:
         symbol = position['symbol']
         position_amt = float(position['positionAmt'])  # الكمية المفتوحة
-        if position_amt != 0:  # إذا كانت الكمية ليست صفراً، يعني أن هناك صفقة مفتوحة
-            active_trades.add(symbol)
+        if position_amt != 0:  # إذا كانت الكمية ليست صفرًا، فهذا يعني وجود صفقة مفتوحة
+            active_trades[symbol] = {
+                "symbol": symbol,
+                "amount": position_amt,
+                "entryPrice": float(position['entryPrice']),
+                # "unrealizedProfit": float(position['unrealizedProfit']),
+                # "leverage": int(position['leverage']),
+                "markPrice": float(position['markPrice']),
+            }
     return active_trades
+
+
+def get_price_precision(client, symbol):
+    resp = client.get_exchange_info()['symbols']
+    for elem in resp:
+        if elem['symbol'] == symbol:
+            # نبحث عن الفلتر المناسب لسعر السوق
+            for filter in elem['filters']:
+                if filter['filterType'] == 'PRICE_FILTER':
+                    # نعيد الدقة الخاصة بالسعر
+                    tick_size = filter['tickSize']
+                    return len(tick_size.split('1')[1]) if '1' in tick_size else 0
+
+def get_qty_precision(client, symbol):
+    resp = client.get_exchange_info()['symbols']
+    for elem in resp:
+        if elem['symbol'] == symbol:
+            # نبحث عن الفلتر المناسب للكمية
+            for filter in elem['filters']:
+                if filter['filterType'] == 'LOT_SIZE':
+                    # نعيد الدقة الخاصة بالكمية بناءً على stepSize
+                    step_size = filter['stepSize']
+                    return len(step_size.split('1')[1]) if '1' in step_size else 0

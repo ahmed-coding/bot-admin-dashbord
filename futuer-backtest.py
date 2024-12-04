@@ -40,7 +40,7 @@ klines_interval=Client.KLINE_INTERVAL_3MINUTE
 klines_limit=1
 top_symbols=[]
 count_top_symbols=70
-analize_period=8
+analize_period=80
 black_list=[
         # # 'XRPUSDT',
         # 'ETHUSDT', 'BTCUSDT', 'SOLUSDT', 'ENSUSDT', 'BNBUSDT', 'FILUSDT',
@@ -168,7 +168,7 @@ def calculate_rsi(data, period=14):
 # تعريف الاستراتيجية
 class RSIStrategy(Strategy):
     rsi_period = 8  # الفترة الزمنية لمؤشر RSI
-    profit_target = 0.015  # الربح المستهدف كنسبة مئوية
+    profit_target = 0.01  # الربح المستهدف كنسبة مئوية
     stop_loss = 0.02  # إيقاف الخسارة كنسبة مئوية
 
     def init(self):
@@ -235,7 +235,7 @@ def fetch_binance_data(symbol, interval, start_date, end_date):
     # client = Client(api_key="your_api_key", api_secret="your_api_secret")
     # klines = client.get_historical_klines(symbol, interval, start_date)
 
-    klines = client.futures_klines(symbol=symbol, interval=interval, limit=120)
+    klines = client.futures_klines(symbol=symbol, interval=interval, limit=analize_period)
     data = pd.DataFrame(klines, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume', 
                                          'close_time', 'quote_asset_volume', 'number_of_trades', 
                                          'taker_buy_base', 'taker_buy_quote', 'ignore'])
@@ -267,7 +267,7 @@ if __name__ == "__main__":
     # استخدم بيانات Binance أو بيانات جاهزة
     for symbol in get_top_symbols(200):
         # data = fetch_binance_data(symbol, Client.KLINE_INTERVAL_3MINUTE, "12 hours ago UTC", "6 hours ago UTC")
-        data = fetch_binance_data(symbol, Client.KLINE_INTERVAL_3MINUTE, "3 hours ago UTC", "6 hours ago UTC")
+        data = fetch_binance_data(symbol, klines_interval, "3 hours ago UTC", "6 hours ago UTC")
 
         # data = fetch_binance_data(symbol, Client.KLINE_INTERVAL_3MINUTE, "168 hours ago UTC", "30 Nov 2024")
 
