@@ -67,7 +67,7 @@ def can_trade(symbol):
 
 
 
-def open_trade_with_dynamic_target(symbol, investment=2.5, base_profit_target=0.002, base_stop_loss=0.0005, timeout=30,is_active=True):
+def open_trade_with_dynamic_target(symbol, investment=2.5, base_profit_target=0.002, base_stop_loss=0.0005, timeout=30,is_active=False):
     global balance, commission_rate, active_trades
     if not is_active:
         return

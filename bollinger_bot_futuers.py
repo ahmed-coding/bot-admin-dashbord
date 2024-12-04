@@ -46,14 +46,14 @@ commission_rate = 0.002 # نسبة العمولة للمنصة
 klines_interval=Client.KLINE_INTERVAL_3MINUTE
 klines_limit=14
 count_top_symbols=200
-analize_period=120
+analize_period=80
 start_date= '3 hours ago UTC'
 
 
 leverage = 20   # الرافعة المالية
 
 
-excluded_symbols =['BONKUSDT','LUNCUSDT']  # قائمة العملات المستثناة بسبب أخطاء متكررة
+excluded_symbols =[]  # قائمة العملات المستثناة بسبب أخطاء متكررة
 symbols_to_trade =request_load.get_futuer_top_symbols(count_top_symbols ,excluded_symbols)
 last_trade_time = {}
 
@@ -63,7 +63,7 @@ __active_symbol = {}
 _symbols = client.futures_exchange_info()['symbols']
 valid_symbols = [s['symbol'] for s in _symbols]
 
-MAX_POSITIONS = 15
+MAX_POSITIONS = 20
 
 
 
@@ -98,7 +98,7 @@ def open_futures_trade(symbol, investment, leverage):
     # print(f"لا يجب شراء {symbol} في الوقت الحالي ")
         return
     
-    time.sleep(3)
+    # time.sleep(3)
     try:
         # ضبط الرافعة المالية
         client.futures_change_leverage(symbol=symbol, leverage=leverage)
@@ -120,14 +120,31 @@ def open_futures_trade(symbol, investment, leverage):
         # quantity = round(_quantity, quantity_precision)
         quantity = helper.adjust_futuer_quantity(client, symbol,((investment/ price)* leverage))
 
-        _target_price = current_price * (1 + base_profit_target)
-        _stop_loss_price = current_price * (1 - base_stop_loss)
+        _target_price = current_price * (1 - base_profit_target)
+        _stop_loss_price = current_price * (1 + base_stop_loss)
         price_precision = helper.get_precision(client, symbol)
         target_price = round(_target_price, price_precision)
         stop_loss_price = round(_stop_loss_price, price_precision)
+        payload = {
+            "symbol": symbol,
+            "quantity": quantity,
+            "initial_price": current_price,
+            "target_price": target_price,
+            'stop_price': stop_loss_price,
+            'start_time':str(datetime.fromtimestamp(time.time())),
+            "timeout": timeout * 60,
+            "investment": investment,
+            "is_futuer": True
+        }
         
         
-        
+        #         # تنفيذ أمر شراء بالسوق
+        # order = client.futures_create_order(
+        #     symbol=symbol,
+        #     side='BUY',
+        #     type='MARKET',
+        #     quantity=quantity
+        # )
                 # تنفيذ أمر شراء بالسوق
         order = client.futures_create_order(
             symbol=symbol,
@@ -136,6 +153,8 @@ def open_futures_trade(symbol, investment, leverage):
             quantity=quantity
         )
 
+        order_response= request_load.create_trad(payload)
+        active_trades = request_load.get_futuer_open_trad()
 
         # حساب سعر جني الأرباح
         # target_price = adjust_futuser_price_precision(client, symbol, current_price * (1 + base_profit_target))
