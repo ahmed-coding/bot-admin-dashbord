@@ -181,15 +181,16 @@ class RSIStrategy(Strategy):
     # def next(self):
         
     #     price = self.data.Close[-1]
-    #     # فتح صفقة شراء بناءً على RSI
+    # #     # فتح صفقة شراء بناءً على RSI
     #     if self.rsi[-1] > 25 and self.rsi[-1] < 45:
-    #         self.buy(sl=price * (1 - self.stop_loss), tp=price * (1 + self.profit_target))
+    #         self.buy(sl= price * (1 - self.stop_loss) ,tp=price * (1 + self.profit_target))
 
-    #     # إغلاق جميع الصفقات عند تحقيق الهدف أو تجاوز الحد
-    #     for trade in self.trades:
-    #         if trade.is_long:
-    #             if self.rsi[-1] > 70:  # شرط إضافي لإغلاق الصفقات
-                    # self.sell()
+    # #     # إغلاق جميع الصفقات عند تحقيق الهدف أو تجاوز الحد
+    # #     for trade in self.trades:
+    # #         if trade.is_long:
+    # #             if self.rsi[-1] > 70:  # شرط إضافي لإغلاق الصفقات
+    #                 # self.sell()
+    
     # def next(self):
     #     price = self.data.Close[0]
     #     stop_loss_price = price * (1 - self.stop_loss)
@@ -217,7 +218,7 @@ class RSIStrategy(Strategy):
         price = self.data.Close[-1]
         stop_loss_price = price * (1 - self.stop_loss)
         take_profit_price = price * (1 + self.profit_target)
-        if self.data.Close[-3] > self.bol_l[-3] and self.data.Close[-2] < self.bol_l[-2]:
+        if self.data.Close[-3] > self.bol_l[-3] and self.data.Close[-2] < self.bol_l[-2] and self.rsi[-1] > 25 and self.rsi[-1] < 45:
             if not self.position:
                 self.buy(sl=stop_loss_price, tp=take_profit_price)
                 
