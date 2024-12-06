@@ -1,4 +1,5 @@
 
+# from backtest import calculate_rsi
 from config import *
 from datetime import datetime
 import pandas as pd
@@ -10,6 +11,7 @@ import request_load
 
 start_date='3 hours ago UTC'
 analize_period=80
+rsi_analize_period = 8
 
 def get_klines(client, symbol, interval, start_date):
     # klines = client.get_historical_klines(symbol, interval, start_date)
@@ -106,7 +108,7 @@ def get_futuer_usdt_balance(client):
             print(f"الرصيد الإجمالي: {total_balance} USDT")
             print(f"الرصيد المتاح: {available_balance} USDT")
             
-    return available_balance - 10
+    return available_balance / 3
 
 def should_open_trade(client,symbol):
     data = fetch_binance_data(client, symbol, Client.KLINE_INTERVAL_3MINUTE, start_date)
@@ -350,3 +352,54 @@ def get_precision(client:Client,symbol):
             #         # نعيد الدقة الخاصة بالسعر
             #         tick_size = filter['tickSize']
             #         return len(tick_size.split('1')[1]) if '1' in tick_size else 0
+
+
+# حساب مؤشر RSI
+def calculate_rsi(prices, period=14):
+    deltas = [prices[i] - prices[i - 1] for i in range(1, len(prices))]
+    gains = [d for d in deltas if d > 0]
+    losses = [-d for d in deltas if d < 0]
+    avg_gain = sum(gains) / period
+    avg_loss = sum(losses) / period
+    rs = avg_gain / avg_loss if avg_loss != 0 else 0
+    rsi = 100 - (100 / (1 + rs))
+    return rsi
+
+
+def fetch_ris_binance_data(client, symbol, intervel , limit):
+    
+    klines = client.get_klines(symbol=symbol, interval=intervel, limit=limit)
+    
+    closing_prices = [float(kline[4]) for kline in klines]
+
+    return calculate_rsi(closing_prices,limit)
+
+
+def should_open_futuer_rsi_trade(client,symbol,intervel, limit,rsi_limit):
+    bollinger_data = fetch_binance_futuer_data(client, symbol, intervel, limit=limit)
+    rsi = fetch_ris_binance_data(client, symbol, intervel, rsi_limit)
+    # if data is None or len(data) < 20:
+    #     print(f"بيانات غير كافية لـ {symbol}")
+    #     return
+    
+    bol_h_band = bol_h(bollinger_data)
+    bol_l_band = bol_l(bollinger_data)
+    close_prices = bollinger_data['close']
+
+    # فتح صفقة شراء إذا اخترق السعر الحد السفلي
+    # if rsi > 25 and rsi < 45:
+
+    if close_prices.iloc[-3] > bol_l_band.iloc[-3] and close_prices.iloc[-2] < bol_l_band.iloc[-2] and  rsi < 40 :
+    
+        return True
+
+    # إغلاق صفقة إذا اخترق السعر الحد العلوي
+    # if close_prices.iloc[-3] < bol_h_band.iloc[-3] and close_prices.iloc[-2] > bol_h_band.iloc[-2] and  rsi > 25 and rsi < 45:
+    # if rsi > 70:
+
+    #     return True
+    
+    
+    return False        
+        
+

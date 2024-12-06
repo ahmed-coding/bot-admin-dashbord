@@ -36,11 +36,11 @@ excluded_symbols = set()  # قائمة العملات المستثناة بسب�
 # bot_settings=Settings()
 symbols_to_trade =[]
 last_trade_time = {}
-klines_interval=Client.KLINE_INTERVAL_3MINUTE
+klines_interval=Client.KLINE_INTERVAL_30MINUTE
 klines_limit=1
 top_symbols=[]
 count_top_symbols=70
-analize_period=120
+analize_period=80
 black_list=[
         # # 'XRPUSDT',
         # 'ETHUSDT', 'BTCUSDT', 'SOLUSDT', 'ENSUSDT', 'BNBUSDT', 'FILUSDT',
@@ -77,7 +77,7 @@ black_list=[
         # 'RENDERUSDT',
         # 'IOTAUSDT',
         # 'EURUSDT',
-        # '',
+        'USDCUSDT',
         # '',
         # '',
         # '',
@@ -130,7 +130,7 @@ def get_top_symbols(limit=20, profit_target=0.007, rsi_threshold=70):
     top_symbols = []
     
     for ticker in sorted_tickers:
-        if ticker['symbol'].endswith("USDT") and ticker['symbol'] in valid_symbols:  # تحقق من صلاحية الرمز
+        if ticker['symbol'].endswith("USDT") and ticker['symbol'] in valid_symbols and ticker['symbol'] not in excluded_symbols and ticker['symbol'] not in black_list :  # تحقق من صلاحية الرمز
             try:
                 klines = client.get_klines(symbol=ticker['symbol'], interval=klines_interval, limit=klines_limit)
                 if klines is None or klines == []:
@@ -191,7 +191,7 @@ class RSIStrategy(Strategy):
     # #             if self.rsi[-1] > 70:  # شرط إضافي لإغلاق الصفقات
     #                 # self.sell()
     
-    # def next(self):
+    # def next(self):/
     #     price = self.data.Close[0]
     #     stop_loss_price = price * (1 - self.stop_loss)
     #     take_profit_price = price * (1 + self.profit_target)
@@ -218,7 +218,13 @@ class RSIStrategy(Strategy):
         price = self.data.Close[-1]
         stop_loss_price = price * (1 - self.stop_loss)
         take_profit_price = price * (1 + self.profit_target)
-        if self.data.Close[-3] > self.bol_l[-3] and self.data.Close[-2] < self.bol_l[-2] and self.rsi[-1] > 25 and self.rsi[-1] < 45:
+        # if self.data.Close[-3] > self.bol_l[-3] and self.data.Close[-2] < self.bol_l[-2] :
+        # if self.data.Close[-3] > self.bol_l[-3] and self.data.Close[-2] < self.bol_l[-2] and self.rsi[-1] > 25 and self.rsi[-1] < 45 :
+        if self.data.Close[-3] > self.bol_l[-3] and self.data.Close[-2] < self.bol_l[-2] and self.rsi[-1] < 30 :
+
+
+        # if self.data.Close[-3] < self.bol_h[-3] and self.data.Close[-2] > self.bol_h[-2]:
+
             if not self.position:
                 self.buy(sl=stop_loss_price, tp=take_profit_price)
                 
@@ -266,7 +272,7 @@ result=[]
 # تنفيذ الباكتيست
 if __name__ == "__main__":
     # استخدم بيانات Binance أو بيانات جاهزة
-    for symbol in get_top_symbols(200):
+    for symbol in get_top_symbols(220):
         # data = fetch_binance_data(symbol, Client.KLINE_INTERVAL_3MINUTE, "12 hours ago UTC", "6 hours ago UTC")
         data = fetch_binance_data(symbol, klines_interval, "3 hours ago UTC", "6 hours ago UTC")
 
@@ -280,7 +286,7 @@ if __name__ == "__main__":
         # تشغيل الباكتيست باستخدام Backtesting.py
         print(symbol)
         
-        bt = Backtest(data, RSIStrategy, cash=10000, commission=0.002)
+        bt = Backtest(data, RSIStrategy, cash=1000000, commission=0.002)
         stats = bt.run() 
         trades, win_rate, best_trade, worst_trade, max_duration, avg_duration= extract_stats(stats)
 

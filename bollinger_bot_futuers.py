@@ -36,10 +36,10 @@ active_trades = request_load.get_futuer_open_trad()
 balance = helper.get_futuer_usdt_balance(client) # الرصيد المبدئي للبوت
 # balance = 3# الرصيد المبدئي للبوت
 
-investment=1 # حجم كل صفقة
-base_profit_target=0.0092 # نسبة الربح
+investment=0.5 # حجم كل صفقة
+base_profit_target=0.01 # نسبة الربح
 # base_profit_target=0.005 # نسبة الربح
-base_stop_loss=0.03 # نسبة الخسارة
+base_stop_loss=0.025 # نسبة الخسارة
 # base_stop_loss=0.000 # نسبة الخسارة
 timeout=60 # وقت انتهاء وقت الصفقة
 commission_rate = 0.002 # نسبة العمولة للمنصة
@@ -63,7 +63,7 @@ __active_symbol = {}
 _symbols = client.futures_exchange_info()['symbols']
 valid_symbols = [s['symbol'] for s in _symbols]
 
-MAX_POSITIONS = 15
+MAX_POSITIONS = 10
 
 
 
@@ -98,11 +98,11 @@ def open_futures_trade(symbol, investment, leverage):
         # print(f"{datetime.now()} - {symbol} -الرصيد الحالي غير كافٍ لفتح صفقة جديدة.")
         return
     
-    if not should_open_futuer_trade(client=client, symbol=symbol, intervel=klines_interval,limit=analize_period):
+    if not helper.should_open_futuer_trade(client=client, symbol=symbol, intervel=klines_interval,limit=analize_period):
     # print(f"لا يجب شراء {symbol} في الوقت الحالي ")
         return
     
-    # time.sleep(3)
+    time.sleep(3)
     try:
         # ضبط الرافعة المالية
         client.futures_change_leverage(symbol=symbol, leverage=leverage)
@@ -162,7 +162,7 @@ def open_futures_trade(symbol, investment, leverage):
                 # تنفيذ أمر شراء بالسوق
         order = client.futures_create_order(
             symbol=symbol,
-            side='BUY',
+            side='SELL',
             type='MARKET',
             quantity=quantity
         )
@@ -174,17 +174,24 @@ def open_futures_trade(symbol, investment, leverage):
         # target_price = adjust_futuser_price_precision(client, symbol, current_price * (1 + base_profit_target))
         # stop_loss_price = adjust_futuser_price_precision(client, symbol, current_price * (1 - base_stop_loss))
 
-        # target_price = current_price * (1 + base_profit_target)
-        # stop_loss_price = current_price * (1 - base_stop_loss)
+        target_price = current_price * (1 - base_profit_target)
+        stop_loss_price = current_price * (1 + base_stop_loss)
 
         # إعداد أمر جني الأرباح
         client.futures_create_order(
             symbol=symbol,
-            side='SELL',
+            side='BUY',
             type='TAKE_PROFIT_MARKET',
             stopPrice=target_price,
             closePosition=True
         )
+        # client.futures_create_order(
+        #     symbol=symbol,
+        #     side='SELL',
+        #     type='TAKE_PROFIT_MARKET',
+        #     stopPrice=target_price,
+        #     closePosition=True
+        # )
 
         print(f"تم فتح صفقة شراء {symbol} بنجاح!")
         print(f"تم تحديد مستوى جني الأرباح عند {target_price}")
