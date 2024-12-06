@@ -37,13 +37,13 @@ balance = helper.get_futuer_usdt_balance(client) # الرصيد المبدئي �
 # balance = 3# الرصيد المبدئي للبوت
 
 investment=0.5 # حجم كل صفقة
-base_profit_target=0.015 # نسبة الربح
+base_profit_target=0.01 # نسبة الربح
 # base_profit_target=0.005 # نسبة الربح
 base_stop_loss=0.02 # نسبة الخسارة
 # base_stop_loss=0.000 # نسبة الخسارة
 timeout=60 # وقت انتهاء وقت الصفقة
 commission_rate = 0.002 # نسبة العمولة للمنصة
-klines_interval=Client.KLINE_INTERVAL_30MINUTE
+klines_interval=Client.KLINE_INTERVAL_15MINUTE
 klines_limit=14
 count_top_symbols=200
 analize_period=80
@@ -64,7 +64,7 @@ __active_symbol = {}
 _symbols = client.futures_exchange_info()['symbols']
 valid_symbols = [s['symbol'] for s in _symbols]
 
-MAX_POSITIONS = 5
+MAX_POSITIONS = 10
 
 
 
