@@ -368,7 +368,7 @@ def calculate_rsi(prices, period=14):
 
 def fetch_ris_binance_data(client, symbol, intervel , limit):
     
-    klines = client.get_klines(symbol=symbol, interval=intervel, limit=limit)
+    klines = client.get_klines(symbol=symbol, interval=intervel, limit=limit )
     
     closing_prices = [float(kline[4]) for kline in klines]
 
@@ -378,7 +378,7 @@ def fetch_ris_binance_data(client, symbol, intervel , limit):
 
 def fetch_ict_ris_binance_data(client, symbol, intervel , limit):
     
-    klines = client.get_klines(symbol=symbol, interval=intervel, limit=limit)
+    klines = client.get_klines(symbol=symbol, interval=intervel, limit=limit +1)
     
     closing_prices = [float(kline[4]) for kline in klines]
     closing_prices = closing_prices[:-1]
@@ -425,12 +425,12 @@ def detect_bos(data):
     """
     # data['BOS'] = (data['Close'] > data['High'].shift(1)) | (data['Close'] < data['Low'].shift(1))
     # data['BOS'] = (data['Close'] > data['High'].shift(1)) | (data['Close'] < data['Low'].shift(1))
-    # data['BOS'] = ((data['Close'] > data['Close'].shift(1)) | (data['Close'] > data['High'].shift(1)))
+    data['BOS'] = ((data['Close'] > data['Close'].shift(1)) | (data['Close'] > data['High'].shift(1)))
     # data['BOS'] = ((data['Close'] > data['High'].shift(1)))
     # data['BOS'] = ((data['Close'] > data['High'].shift(1)))
-    data['BOS'] = ((data['Close'] > data['Close'].shift(1)))
+    # data['BOS'] = ((data['Close'] > data['Close'].shift(1)))
 
-    return data['BOS'].iloc[-1]  # استخدام آخر قيمة BOS
+    return data['BOS'].iloc[-2]  # استخدام آخر قيمة BOS
 
 
 
@@ -480,7 +480,7 @@ def rsi_ict_should_open_futuer_trade(client, symbol, interval, limit, rsi_period
 
     # التحقق من وجود إشارة BOS
     bos = detect_bos(data)
-    if bos and rsi < 40:
+    if bos and rsi > 25 and rsi < 45:
         return True
     
     return False

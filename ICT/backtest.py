@@ -11,7 +11,7 @@ import ta
 
 klines_interval=Client.KLINE_INTERVAL_5MINUTE
 count_top_symbols=70
-analize_period=80
+analize_period=150
 excluded_symbols = set()  # قائمة العملات المستثناة بسبب أخطاء متكررة
 klines_limit=20
 black_list=[
@@ -114,7 +114,7 @@ class ICTStrategy(Strategy):
         self.rsi = self.I(calculate_rsi, self.data.Close, self.rsi_period)
         self.bol_h=self.I(bol_h, self.data.Close)
         self.bol_l=self.I(bol_l, self.data.Close)
-        
+    
     
     
     
@@ -197,7 +197,7 @@ result=[]
 # تنفيذ الباكتيست
 if __name__ == "__main__":
     # استخدم بيانات Binance أو بيانات جاهزة
-    for symbol in get_top_symbols(20):
+    for symbol in get_top_symbols(200):
         # data = fetch_binance_data(symbol, Client.KLINE_INTERVAL_3MINUTE, "12 hours ago UTC", "6 hours ago UTC")
         data = load_data(symbol, klines_interval, analize_period)
 

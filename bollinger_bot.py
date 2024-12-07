@@ -36,7 +36,7 @@ base_stop_loss=0.02 # نسبة الخسارة
 # base_stop_loss=0.000 # نسبة الخسارة
 timeout=60 # وقت انتهاء وقت الصفقة
 commission_rate = 0.002 # نسبة العمولة للمنصة
-klines_interval=Client.KLINE_INTERVAL_3MINUTE
+klines_interval=Client.KLINE_INTERVAL_5MINUTE
 klines_limit=14
 count_top_symbols=200
 analize_period=80
@@ -95,7 +95,7 @@ def open_trade_with_dynamic_target(symbol, investment=2.5, base_profit_target=0.
     # avg_volatility = statistics.stdev(closing_prices)
 
     # Ensure both strategies' conditions are met before opening a trade
-    if not should_open_trade(client=client, symbol=symbol,intervel=klines_interval,limit=analize_period):
+    if not helper.rsi_ict_should_open_futuer_trade(client=client, symbol=symbol,interval=klines_interval,limit=analize_period, rsi_period=8):
         # print(f"لا يجب شراء {symbol} في الوقت الحالي ")
         return
     time.sleep(5) # لتجنب النزول اثناء فتح الصفقة 
