@@ -375,6 +375,18 @@ def fetch_ris_binance_data(client, symbol, intervel , limit):
     return calculate_rsi(closing_prices,limit)
 
 
+
+def fetch_ict_ris_binance_data(client, symbol, intervel , limit):
+    
+    klines = client.get_klines(symbol=symbol, interval=intervel, limit=limit)
+    
+    closing_prices = [float(kline[4]) for kline in klines]
+    closing_prices = closing_prices[:-1]
+
+    return calculate_rsi(closing_prices,limit)
+
+
+
 def should_open_futuer_rsi_trade(client,symbol,intervel, limit,rsi_limit):
     bollinger_data = fetch_binance_futuer_data(client, symbol, intervel, limit=limit)
     rsi = fetch_ris_binance_data(client, symbol, intervel, rsi_limit)
@@ -411,7 +423,13 @@ def detect_bos(data):
     """
     اكتشاف كسر الهيكل (BOS) في بيانات Pandas.
     """
-    data['BOS'] = (data['Close'] > data['High'].shift(1)) | (data['Close'] < data['Low'].shift(1))
+    # data['BOS'] = (data['Close'] > data['High'].shift(1)) | (data['Close'] < data['Low'].shift(1))
+    # data['BOS'] = (data['Close'] > data['High'].shift(1)) | (data['Close'] < data['Low'].shift(1))
+    # data['BOS'] = ((data['Close'] > data['Close'].shift(1)) | (data['Close'] > data['High'].shift(1)))
+    # data['BOS'] = ((data['Close'] > data['High'].shift(1)))
+    # data['BOS'] = ((data['Close'] > data['High'].shift(1)))
+    data['BOS'] = ((data['Close'] > data['Close'].shift(1)))
+
     return data['BOS'].iloc[-1]  # استخدام آخر قيمة BOS
 
 
@@ -453,7 +471,7 @@ def rsi_ict_should_open_futuer_trade(client, symbol, interval, limit, rsi_period
     """
     # جلب البيانات المطلوبة
     data = fetch_ict_data(client, symbol, interval, limit=limit)
-    rsi = fetch_ris_binance_data(client, symbol, interval, rsi_period)
+    rsi = fetch_ict_ris_binance_data(client, symbol, interval, rsi_period)
     
     # التحقق من كفاية البيانات
     if data is None or len(data) < limit:

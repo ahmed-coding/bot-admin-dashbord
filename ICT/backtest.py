@@ -11,7 +11,7 @@ import ta
 
 klines_interval=Client.KLINE_INTERVAL_5MINUTE
 count_top_symbols=70
-analize_period=120
+analize_period=80
 excluded_symbols = set()  # قائمة العملات المستثناة بسبب أخطاء متكررة
 klines_limit=20
 black_list=[
@@ -49,7 +49,12 @@ def detect_bos(data):
     """
     اكتشاف كسر الهيكل (BOS) في بيانات Pandas.
     """
-    data['BOS'] = (data['Close'] > data['High'].shift(1)) | (data['Close'] < data['Low'].shift(1))
+    # data['BOS'] = (data['Close'] > data['High'].shift(1)) | (data['Close'] < data['Low'].shift(1))
+    data['BOS'] = ((data['Close'] > data['Close'].shift(1)) | (data['Close'] > data['High'].shift(1)))
+    # data['BOS'] = ((data['Close'] > data['High'].shift(1)))
+    # data['BOS'] = ((data['Close'] > data['High'].shift(1)))
+    # data['BOS'] = ((data['Close'] > data['Close'].shift(1)))
+
     return data
 
 
@@ -86,6 +91,7 @@ def calculate_rsi(data, period=14):
     rsi = 100 - (100 / (1 + rs))
     return rsi
 
+
 def bol_h(df):
     return ta.volatility.BollingerBands(pd.Series(df)).bollinger_hband() 
 
@@ -97,7 +103,7 @@ def bol_l(df):
 class ICTStrategy(Strategy):
     profit_target = 0.01  # الربح المستهدف كنسبة مئوية
     stop_loss = 0.02  # إيقاف الخسارة كنسبة مئوية
-    rsi_period = 10
+    rsi_period = 8
     def init(self):
         """
         تهيئة المؤشرات أو المتغيرات.
@@ -106,8 +112,8 @@ class ICTStrategy(Strategy):
         # self.data['Liquidity_Zone_High'] = self.data['High'].rolling(window=5).max().shift(1)
         # self.data['Liquidity_Zone_Low'] = self.data['Low'].rolling(window=5).min().shift(1)
         self.rsi = self.I(calculate_rsi, self.data.Close, self.rsi_period)
-        # self.bol_h=self.I(bol_h, self.data.Close)
-        # self.bol_l=self.I(bol_l, self.data.Close)
+        self.bol_h=self.I(bol_h, self.data.Close)
+        self.bol_l=self.I(bol_l, self.data.Close)
         
     
     
@@ -115,13 +121,16 @@ class ICTStrategy(Strategy):
     def next(self):
         
         
-        bos_detected = self.data.BOS[-1]
+        bos_detected = self.data.BOS[-2]
         # print(f"BOS Detected: {bos_detected}")
         close_price = self.data.Close[-1]
 
         # if bos_detected and self.data.Close[-3] > self.bol_l[-3] and self.data.Close[-2] < self.bol_l[-2] :
         # if bos_detected and self.data.Close[-3] > self.bol_l[-3] and self.data.Close[-2] < self.bol_l[-2] and self.rsi[-1] > 25 and self.rsi[-1] < 45:
-        if bos_detected and self.rsi[-1] < 30:
+        # if bos_detected and self.data.Close[-3] > self.bol_l[-3] and self.data.Close[-2] < self.bol_l[-2]:
+
+        if bos_detected and self.rsi[-2] < 40:
+        # if bos_detected and self.rsi[-2] > 25 and self.rsi[-2] < 45:
 
             # print("BOS Signal Detected!")
             # اختبر بشكل مستقل من دون FVG
@@ -188,7 +197,7 @@ result=[]
 # تنفيذ الباكتيست
 if __name__ == "__main__":
     # استخدم بيانات Binance أو بيانات جاهزة
-    for symbol in get_top_symbols(200):
+    for symbol in get_top_symbols(20):
         # data = fetch_binance_data(symbol, Client.KLINE_INTERVAL_3MINUTE, "12 hours ago UTC", "6 hours ago UTC")
         data = load_data(symbol, klines_interval, analize_period)
 

@@ -47,7 +47,7 @@ klines_interval=Client.KLINE_INTERVAL_30MINUTE
 klines_limit=14
 count_top_symbols=200
 analize_period=80
-rsi_analize_period=10
+rsi_analize_period=8
 start_date= '3 hours ago UTC'
 
 
