@@ -43,11 +43,11 @@ base_stop_loss=0.02 # نسبة الخسارة
 # base_stop_loss=0.000 # نسبة الخسارة
 timeout=60 # وقت انتهاء وقت الصفقة
 commission_rate = 0.002 # نسبة العمولة للمنصة
-klines_interval=Client.KLINE_INTERVAL_15MINUTE
+klines_interval=Client.KLINE_INTERVAL_30MINUTE
 klines_limit=14
 count_top_symbols=200
 analize_period=80
-rsi_analize_period=8
+rsi_analize_period=10
 start_date= '3 hours ago UTC'
 
 
@@ -104,7 +104,7 @@ def open_futures_trade(symbol, investment, leverage):
     # print(f"لا يجب شراء {symbol} في الوقت الحالي ")
         return
     
-    # time.sleep(3)
+    time.sleep(3)
     try:
         # ضبط الرافعة المالية
         client.futures_change_leverage(symbol=symbol, leverage=leverage)

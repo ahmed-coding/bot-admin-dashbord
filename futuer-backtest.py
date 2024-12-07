@@ -36,7 +36,7 @@ excluded_symbols = set()  # قائمة العملات المستثناة بسب�
 # bot_settings=Settings()
 symbols_to_trade =[]
 last_trade_time = {}
-klines_interval=Client.KLINE_INTERVAL_15MINUTE
+klines_interval=Client.KLINE_INTERVAL_5MINUTE
 klines_limit=1
 top_symbols=[]
 count_top_symbols=70
@@ -167,7 +167,7 @@ def calculate_rsi(data, period=14):
 
 # تعريف الاستراتيجية
 class RSIStrategy(Strategy):
-    rsi_period = 8  # الفترة الزمنية لمؤشر RSI
+    rsi_period = 10  # الفترة الزمنية لمؤشر RSI
     profit_target = 0.01  # الربح المستهدف كنسبة مئوية
     stop_loss = 0.02  # إيقاف الخسارة كنسبة مئوية
 
@@ -218,10 +218,10 @@ class RSIStrategy(Strategy):
         price = self.data.Close[-1]
         stop_loss_price = price * (1 - self.stop_loss)
         take_profit_price = price * (1 + self.profit_target)
-        # if self.data.Close[-3] > self.bol_l[-3] and self.data.Close[-2] < self.bol_l[-2] :
+        if self.data.Close[-3] > self.bol_l[-3] and self.data.Close[-2] < self.bol_l[-2] :
         # if self.data.Close[-3] > self.bol_l[-3] and self.data.Close[-2] < self.bol_l[-2] and self.rsi[-1] > 25 and self.rsi[-1] < 45 :
-        if self.data.Close[-3] > self.bol_l[-3] and self.data.Close[-2] < self.bol_l[-2] and self.rsi[-1] < 30 :
-
+        # if self.data.Close[-3] > self.bol_l[-3] and self.data.Close[-2] < self.bol_l[-2] and self.rsi[-1] < 40 :
+        # if self.rsi[-1] > 25 and self.rsi[-1] < 45:
 
         # if self.data.Close[-3] < self.bol_h[-3] and self.data.Close[-2] > self.bol_h[-2]:
 
@@ -272,7 +272,7 @@ result=[]
 # تنفيذ الباكتيست
 if __name__ == "__main__":
     # استخدم بيانات Binance أو بيانات جاهزة
-    for symbol in get_top_symbols(220):
+    for symbol in get_top_symbols(200):
         # data = fetch_binance_data(symbol, Client.KLINE_INTERVAL_3MINUTE, "12 hours ago UTC", "6 hours ago UTC")
         data = fetch_binance_data(symbol, klines_interval, "3 hours ago UTC", "6 hours ago UTC")
 

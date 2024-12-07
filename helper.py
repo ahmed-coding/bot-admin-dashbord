@@ -389,7 +389,9 @@ def should_open_futuer_rsi_trade(client,symbol,intervel, limit,rsi_limit):
     # فتح صفقة شراء إذا اخترق السعر الحد السفلي
     # if rsi > 25 and rsi < 45:
 
+    # if close_prices.iloc[-3] > bol_l_band.iloc[-3] and close_prices.iloc[-2] < bol_l_band.iloc[-2] and  rsi < 40 :
     if close_prices.iloc[-3] > bol_l_band.iloc[-3] and close_prices.iloc[-2] < bol_l_band.iloc[-2] and  rsi < 40 :
+
     
         return True
 
@@ -403,3 +405,64 @@ def should_open_futuer_rsi_trade(client,symbol,intervel, limit,rsi_limit):
     return False        
         
 
+
+
+def detect_bos(data):
+    """
+    اكتشاف كسر الهيكل (BOS) في بيانات Pandas.
+    """
+    data['BOS'] = (data['Close'] > data['High'].shift(1)) | (data['Close'] < data['Low'].shift(1))
+    return data['BOS'].iloc[-1]  # استخدام آخر قيمة BOS
+
+
+
+def fetch_ict_data(client,symbol, interval, limit=500):
+    """
+    جلب بيانات الشموع التاريخية من Binance.
+    """
+    candles = client.futures_klines(symbol=symbol, interval=interval, limit=limit)
+    df = pd.DataFrame(candles, columns=[
+        'Open_Time', 'Open', 'High', 'Low', 'Close', 'Volume',
+        'Close_Time', 'Quote_Asset_Volume', 'Number_Of_Trades',
+        'Taker_Buy_Base_Asset_Volume', 'Taker_Buy_Quote_Asset_Volume', 'Ignore'
+    ])
+    df['Open'] = df['Open'].astype(float)
+    df['High'] = df['High'].astype(float)
+    df['Low'] = df['Low'].astype(float)
+    df['Close'] = df['Close'].astype(float)
+    df['Volume'] = df['Volume'].astype(float)
+    df['Open_Time'] = pd.to_datetime(df['Open_Time'], unit='ms')
+    return df[['Open_Time', 'Open', 'High', 'Low', 'Close', 'Volume']]
+
+
+
+
+def rsi_ict_should_open_futuer_trade(client, symbol, interval, limit, rsi_period):
+    """
+    التحقق مما إذا كانت هناك فرصة لفتح صفقة بناءً على استراتيجية RSI و BOS.
+    
+    Args:
+        client: كائن العميل للتواصل مع Binance API.
+        symbol (str): رمز الزوج (مثل BTCUSDT).
+        interval (str): الإطار الزمني (مثل 5m، 15m).
+        limit (int): عدد الشموع المطلوبة لتحليل BOS.
+        rsi_period (int): فترة RSI المستخدمة في الحساب.
+        
+    Returns:
+        bool: True إذا كانت الشروط متوفرة لفتح صفقة، False إذا لم تكن.
+    """
+    # جلب البيانات المطلوبة
+    data = fetch_ict_data(client, symbol, interval, limit=limit)
+    rsi = fetch_ris_binance_data(client, symbol, interval, rsi_period)
+    
+    # التحقق من كفاية البيانات
+    if data is None or len(data) < limit:
+        # print(f"⚠️ بيانات غير كافية لتحليل {symbol}")
+        return False
+
+    # التحقق من وجود إشارة BOS
+    bos = detect_bos(data)
+    if bos and rsi < 40:
+        return True
+    
+    return False
