@@ -36,7 +36,7 @@ excluded_symbols = set()  # قائمة العملات المستثناة بسب�
 # bot_settings=Settings()
 symbols_to_trade =[]
 last_trade_time = {}
-klines_interval=Client.KLINE_INTERVAL_3MINUTE
+klines_interval=Client.KLINE_INTERVAL_5MINUTE
 klines_limit=1
 top_symbols=[]
 count_top_symbols=70
@@ -78,7 +78,7 @@ black_list=[
         # 'IOTAUSDT',
         # 'EURUSDT',
         'USDCUSDT',
-        # '',
+        'USTCUSDT',
         # '',
         # '',
         

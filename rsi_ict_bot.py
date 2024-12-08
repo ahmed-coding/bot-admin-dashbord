@@ -37,7 +37,7 @@ balance = helper.get_futuer_usdt_balance(client) # الرصيد المبدئي �
 # balance = 3# الرصيد المبدئي للبوت
 
 investment=0.5 # حجم كل صفقة
-base_profit_target=0.01 # نسبة الربح
+base_profit_target=0.008 # نسبة الربح
 # base_profit_target=0.005 # نسبة الربح
 base_stop_loss=0.02 # نسبة الخسارة
 # base_stop_loss=0.000 # نسبة الخسارة
@@ -49,7 +49,14 @@ count_top_symbols=200
 analize_period=80
 rsi_analize_period=8
 start_date= '3 hours ago UTC'
-
+# test_list =[
+#                     'CATIUSDT',
+#                     'WIFUSDT',
+#                     'CATIUSDT',
+#                     'PNUTUSDT',
+#                     'CRVUSDT',
+#                     'BOMEUSDT',
+#                 ]
 
 leverage = 20   # ال80رافعة المالية
 
@@ -64,7 +71,7 @@ __active_symbol = {}
 _symbols = client.futures_exchange_info()['symbols']
 valid_symbols = [s['symbol'] for s in _symbols]
 
-MAX_POSITIONS = 11
+MAX_POSITIONS = 10
 
 
 
@@ -130,14 +137,15 @@ def open_futures_trade(symbol, investment, leverage):
         _quantity = (investment / current_price) * leverage
         # quantity_precision = helper.get_qty_precision(client, symbol,)
         # quantity = round(_quantity, quantity_precision)
-        quantity = helper.adjust_futuer_quantity(client, symbol,((investment * leverage )/ current_price))
-
+        # quantity = helper.adjust_futuer_quantity(client, symbol,((investment * leverage )/ current_price))
+        quantity = helper.QUN_Precision(client,((investment * leverage )/ current_price),symbol,)
+        
         _target_price = current_price * (1 + base_profit_target)
         _stop_loss_price = current_price * (1 - base_stop_loss)
         # price_precision = helper.adjust_futuser_price_precision(client, symbol, current_price * (1 + base_profit_target))
-        target_price = round(_target_price, price_precision)
+        # target_price = round(_target_price, price_precision)
         stop_loss_price = round(_stop_loss_price, price_precision)
-        
+        target_price = float(helper.Pric_Precision(client, _target_price, symbol))
         # _target_price = current_price * (1 + base_profit_target)
         # _stop_loss_price = current_price * (1 - base_stop_loss)
         # price_precision = helper.adjust_futuser_price_precision(client, symbol, current_price * (1 + base_profit_target))
@@ -454,9 +462,12 @@ def update_prices():
     while True:
         # check_btc= check_btc_price()
         # active_trades = request_load.get_futuer_open_trad()
-
+        if balance < investment:
+    # print(f"{datetime.now()} - {symbol} -الرصيد الحالي غير كافٍ لفتح صفقة جديدة.")
+            return
         check_btc=True
         for symbol in symbols_to_trade:
+        # for symbol in test_list:
             if symbol in excluded_symbols or symbol not in valid_symbols :
                 continue
             try:

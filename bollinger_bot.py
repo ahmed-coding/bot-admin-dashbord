@@ -96,6 +96,8 @@ def open_trade_with_dynamic_target(symbol, investment=2.5, base_profit_target=0.
 
     # Ensure both strategies' conditions are met before opening a trade
     if not helper.rsi_ict_should_open_futuer_trade(client=client, symbol=symbol,interval=klines_interval,limit=analize_period, rsi_period=8):
+    # if not helper.rsi_ict_should_open_futuer_trade(client=client, symbol=symbol,interval=klines_interval,limit=analize_period, rsi_period=8):
+
         # print(f"لا يجب شراء {symbol} في الوقت الحالي ")
         return
     time.sleep(5) # لتجنب النزول اثناء فتح الصفقة 
@@ -263,7 +265,13 @@ def update_prices():
     while True:
         # check_btc= check_btc_price()
         check_btc=True
+        if balance < investment:
+    # print(f"{datetime.now()} - {symbol} -الرصيد الحالي غير كافٍ لفتح صفقة جديدة.")
+            return
         for symbol in symbols_to_trade:
+            
+
+
             if symbol in excluded_symbols :
                 continue
             try:

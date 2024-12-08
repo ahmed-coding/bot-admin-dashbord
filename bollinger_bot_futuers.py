@@ -63,7 +63,7 @@ __active_symbol = {}
 _symbols = client.futures_exchange_info()['symbols']
 valid_symbols = [s['symbol'] for s in _symbols]
 
-MAX_POSITIONS = 10
+MAX_POSITIONS = 11
 
 
 

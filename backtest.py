@@ -78,7 +78,7 @@ black_list=[
         # 'IOTAUSDT',
         # 'EURUSDT',
         'USDCUSDT',
-        # '',
+        'USTCUSDT',
         # '',
         # '',
         

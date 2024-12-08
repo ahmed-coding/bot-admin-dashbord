@@ -16,6 +16,7 @@ excluded_symbols = set()  # قائمة العملات المستثناة بسب�
 klines_limit=20
 black_list=[
         'USDCUSDT',
+        'USTCUSDT',
 
     ]
 
@@ -49,8 +50,8 @@ def detect_bos(data):
     """
     اكتشاف كسر الهيكل (BOS) في بيانات Pandas.
     """
-    # data['BOS'] = (data['Close'] > data['High'].shift(1)) | (data['Close'] < data['Low'].shift(1))
-    data['BOS'] = ((data['Close'] > data['Close'].shift(1)) | (data['Close'] > data['High'].shift(1)))
+    data['BOS'] = (data['Close'] > data['High'].shift(1)) | (data['Close'] < data['Low'].shift(1))
+    # data['BOS'] = ((data['Close'] > data['Close'].shift(1)) & (data['Close'] > data['High'].shift(1)))
     # data['BOS'] = ((data['Close'] > data['High'].shift(1)))
     # data['BOS'] = ((data['Close'] > data['High'].shift(1)))
     # data['BOS'] = ((data['Close'] > data['Close'].shift(1)))
@@ -121,15 +122,16 @@ class ICTStrategy(Strategy):
     def next(self):
         
         
-        bos_detected = self.data.BOS[-2]
+        bos_detected = self.data.BOS[-1]
         # print(f"BOS Detected: {bos_detected}")
         close_price = self.data.Close[-1]
+        fvg_zones = detect_fvg(self.data)
 
         # if bos_detected and self.data.Close[-3] > self.bol_l[-3] and self.data.Close[-2] < self.bol_l[-2] :
         # if bos_detected and self.data.Close[-3] > self.bol_l[-3] and self.data.Close[-2] < self.bol_l[-2] and self.rsi[-1] > 25 and self.rsi[-1] < 45:
         # if bos_detected and self.data.Close[-3] > self.bol_l[-3] and self.data.Close[-2] < self.bol_l[-2]:
 
-        if bos_detected and self.rsi[-2] < 40:
+        if bos_detected and self.rsi[-1] < 40:
         # if bos_detected and self.rsi[-2] > 25 and self.rsi[-2] < 45:
 
             # print("BOS Signal Detected!")
@@ -143,10 +145,10 @@ class ICTStrategy(Strategy):
         # bos_detected = self.data.BOS[-1]
         
         # # سجل تحقق الإشارات
-        # print(f"FVG Zones: {fvg_zones}, BOS Detected: {bos_detected}")
+        # # print(f"FVG Zones: {fvg_zones}, BOS Detected: {bos_detected}")
         
         # if bos_detected and fvg_zones:
-        #     print("Signal Detected! Checking conditions...")
+        #     # print("Signal Detected! Checking conditions...")
         #     zone = fvg_zones[-1]
         #     close_price = self.data.Close[-1]
 
@@ -158,8 +160,10 @@ class ICTStrategy(Strategy):
         #         stop_loss_price = close_price * (1 + risk_percentage)
         #         take_profit_price = close_price * (1 - reward_percentage)
         #         self.sell(sl=stop_loss_price, tp=take_profit_price)
-
+            
         #     elif close_price > zone['high'] and not self.position:
+        #     # if close_price > zone['high'] and not self.position:
+            
         #         print("Opening Buy Position...")
         #         stop_loss_price = close_price * (1 - risk_percentage)
         #         take_profit_price = close_price * (1 + reward_percentage)

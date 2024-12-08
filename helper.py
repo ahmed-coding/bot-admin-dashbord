@@ -108,7 +108,7 @@ def get_futuer_usdt_balance(client):
             print(f"الرصيد الإجمالي: {total_balance} USDT")
             print(f"الرصيد المتاح: {available_balance} USDT")
             
-    return available_balance / 3
+    return available_balance / 2.5
 
 def should_open_trade(client,symbol):
     data = fetch_binance_data(client, symbol, Client.KLINE_INTERVAL_3MINUTE, start_date)
@@ -368,7 +368,7 @@ def calculate_rsi(prices, period=14):
 
 def fetch_ris_binance_data(client, symbol, intervel , limit):
     
-    klines = client.get_klines(symbol=symbol, interval=intervel, limit=limit )
+    klines = client.get_klines(symbol=symbol, interval=intervel, limit=limit +1)
     
     closing_prices = [float(kline[4]) for kline in klines]
 
@@ -404,7 +404,6 @@ def should_open_futuer_rsi_trade(client,symbol,intervel, limit,rsi_limit):
     # if close_prices.iloc[-3] > bol_l_band.iloc[-3] and close_prices.iloc[-2] < bol_l_band.iloc[-2] and  rsi < 40 :
     if close_prices.iloc[-3] > bol_l_band.iloc[-3] and close_prices.iloc[-2] < bol_l_band.iloc[-2] and  rsi < 40 :
 
-    
         return True
 
     # إغلاق صفقة إذا اخترق السعر الحد العلوي
@@ -425,7 +424,9 @@ def detect_bos(data):
     """
     # data['BOS'] = (data['Close'] > data['High'].shift(1)) | (data['Close'] < data['Low'].shift(1))
     # data['BOS'] = (data['Close'] > data['High'].shift(1)) | (data['Close'] < data['Low'].shift(1))
-    data['BOS'] = ((data['Close'] > data['Close'].shift(1)) | (data['Close'] > data['High'].shift(1)))
+    # data['BOS'] = ((data['Close'] > data['Close'].shift(1)) | (data['Close'] > data['High'].shift(1)))
+    data['BOS'] = ((data['Close'] > data['Close'].shift(1)) & (data['Close'] > data['High'].shift(1)))
+
     # data['BOS'] = ((data['Close'] > data['High'].shift(1)))
     # data['BOS'] = ((data['Close'] > data['High'].shift(1)))
     # data['BOS'] = ((data['Close'] > data['Close'].shift(1)))
@@ -480,7 +481,29 @@ def rsi_ict_should_open_futuer_trade(client, symbol, interval, limit, rsi_period
 
     # التحقق من وجود إشارة BOS
     bos = detect_bos(data)
-    if bos and rsi > 25 and rsi < 45:
+    if bos and  rsi < 40:
         return True
     
     return False
+
+
+# def getTickerPricePrecision(client, symbol):
+#     resp = client.exchange_info()['symbols']
+#     for elem in resp:
+#         if elem['symbol'] == symbol:
+#             return elem['pricePrecision']
+
+# def getTickerQtyPrecision(client, symbol):
+#     resp = client.exchange_info()['symbols']
+#     for elem in resp:
+#         if elem['symbol'] == symbol:
+#             return elem['quantityPrecision']
+        
+        
+def Pric_Precision(client, price, symbol):
+
+    return str(round(float(price),[x['pricePrecision'] for x in client.futures_exchange_info()['symbols'] if x['symbol'] == symbol][0]))
+
+
+def QUN_Precision(client,quantity, symbol):
+    return str(round(float(quantity),[x['quantityPrecision'] for x in client.futures_exchange_info()['symbols'] if x['symbol'] == symbol][0]))

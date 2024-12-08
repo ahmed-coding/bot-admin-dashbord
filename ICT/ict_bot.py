@@ -78,7 +78,7 @@ def detect_fvg(data):
     lows = data['Low']
     closes = data['Close']
 
-    print(f"Highs: {highs[-5:]}, Lows: {lows[-5:]}, Closes: {closes[-5:]}")
+    # print(f"Highs: {highs[-5:]}, Lows: {lows[-5:]}, Closes: {closes[-5:]}")
 
     fvg_zones = []
     # اكتشاف الفجوات في البيانات
@@ -88,7 +88,7 @@ def detect_fvg(data):
         elif highs[i] < lows[i - 1]:  # فجوة هبوطية
             fvg_zones.append({'high': highs[i], 'low': lows[i - 1]})
 
-    print(f"Detected FVG Zones: {fvg_zones}")
+    # print(f"Detected FVG Zones: {fvg_zones}")
     return fvg_zones
 
 

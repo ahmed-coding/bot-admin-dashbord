@@ -46,7 +46,7 @@ commission_rate = 0.002 # نسبة العمولة للمنصة
 klines_interval=Client.KLINE_INTERVAL_30MINUTE
 klines_limit=14
 count_top_symbols=200
-analize_period=80
+analize_period=120
 rsi_analize_period=8
 start_date= '3 hours ago UTC'
 
