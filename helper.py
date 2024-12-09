@@ -594,7 +594,7 @@ def detect_double_bottom(data):
     # التحقق من القاعين المتساويين نسبياً
     if (
         lows.iloc[-3] < lows.iloc[-4] and  # القاع الأول أقل من السابق
-        lows.iloc[-3] == lows.iloc[-1] and  # القاع الأول يساوي القاع الثاني
+        abs(lows.iloc[-3] - lows.iloc[-1]) < (min(lows[-5:]) * 0.01) and  # القاع الأول يساوي القاع الثاني
         data['Close'].iloc[-1] > data['High'].iloc[-2]  # الإغلاق بعد القاع الثاني أعلى من القمة بين القاعين
     ):
         return True
@@ -628,30 +628,119 @@ def detect_inverse_head_and_shoulders(data):
     return False
 
 
+# def detect_hammer(data):
+#     """
+#     دالة للكشف عن نمط المطرقة في البيانات.
+#     """
+#     # احصل على البيانات اللازمة
+#     open_price = data['Open'].iloc[-1]
+#     high_price = data['High'].iloc[-1]
+#     low_price = data['Low'].iloc[-1]
+#     close_price = data['Close'].iloc[-1]
+
+#     # حساب جسم الشمعة والظلال
+#     body = abs(close_price - open_price)  # طول الجسم
+#     lower_shadow = abs(open_price - low_price) if close_price > open_price else abs(close_price - low_price)  # الظل السفلي
+#     upper_shadow = abs(high_price - close_price) if close_price > open_price else abs(high_price - open_price)  # الظل العلوي
+
+#     # التحقق من شروط نمط المطرقة
+#     is_hammer = (
+#         body < (high_price - low_price) * 0.3 and  # الجسم صغير مقارنة بالمدى
+#         lower_shadow > body * 2 and  # الظل السفلي أطول بمرتين من الجسم
+#         upper_shadow < body * 0.3  # الظل العلوي قصير جدًا
+#     )
+#     return is_hammer
+
+
+
 def detect_hammer(data):
     """
-    دالة للكشف عن نمط المطرقة في البيانات.
+    كشف نمط المطرقة (Hammer)
     """
-    # احصل على البيانات اللازمة
     open_price = data['Open'].iloc[-1]
+    close_price = data['Close'].iloc[-1]
     high_price = data['High'].iloc[-1]
     low_price = data['Low'].iloc[-1]
-    close_price = data['Close'].iloc[-1]
 
-    # حساب جسم الشمعة والظلال
-    body = abs(close_price - open_price)  # طول الجسم
-    lower_shadow = abs(open_price - low_price) if close_price > open_price else abs(close_price - low_price)  # الظل السفلي
-    upper_shadow = abs(high_price - close_price) if close_price > open_price else abs(high_price - open_price)  # الظل العلوي
+    body = abs(close_price - open_price)
+    lower_shadow = min(open_price, close_price) - low_price
+    upper_shadow = high_price - max(open_price, close_price)
 
-    # التحقق من شروط نمط المطرقة
-    is_hammer = (
-        body < (high_price - low_price) * 0.3 and  # الجسم صغير مقارنة بالمدى
-        lower_shadow > body * 2 and  # الظل السفلي أطول بمرتين من الجسم
-        upper_shadow < body * 0.3  # الظل العلوي قصير جدًا
+    return (
+        body < (high_price - low_price) * 0.3 and
+        lower_shadow > body * 2 and
+        upper_shadow < body * 0.3
     )
-    return is_hammer
 
 
+def detect_bullish_engulfing(data):
+    """
+    كشف نمط الابتلاع الشرائي (Bullish Engulfing)
+    """
+    open_price_1 = data['Open'].iloc[-2]
+    close_price_1 = data['Close'].iloc[-2]
+    open_price_2 = data['Open'].iloc[-1]
+    close_price_2 = data['Close'].iloc[-1]
+
+    return (
+        close_price_1 < open_price_1 and  # الشمعة الأولى هابطة
+        open_price_2 < close_price_1 and  # افتتاح الشمعة الثانية أقل من إغلاق الأولى
+        close_price_2 > open_price_1      # إغلاق الشمعة الثانية أعلى من افتتاح الأولى
+    )
+
+
+def detect_morning_star(data):
+    """
+    كشف نمط نجمة الصباح (Morning Star)
+    """
+    open_price_1 = data['Open'].iloc[-3]
+    close_price_1 = data['Close'].iloc[-3]
+    open_price_2 = data['Open'].iloc[-2]
+    close_price_2 = data['Close'].iloc[-2]
+    open_price_3 = data['Open'].iloc[-1]
+    close_price_3 = data['Close'].iloc[-1]
+
+    return (
+        close_price_1 < open_price_1 and  # الشمعة الأولى هابطة
+        abs(close_price_2 - open_price_2) < (close_price_1 - open_price_1) * 0.5 and  # الشمعة الثانية صغيرة
+        close_price_3 > open_price_1      # الشمعة الثالثة تغلق فوق افتتاح الأولى
+    )
+
+
+def detect_piercing_line(data):
+    """
+    كشف نمط اختراق الخط (Piercing Line)
+    """
+    open_price_1 = data['Open'].iloc[-2]
+    close_price_1 = data['Close'].iloc[-2]
+    open_price_2 = data['Open'].iloc[-1]
+    close_price_2 = data['Close'].iloc[-1]
+
+    return (
+        close_price_1 < open_price_1 and  # الشمعة الأولى هابطة
+        open_price_2 < close_price_1 and  # الشمعة الثانية تفتح أدنى من إغلاق الأولى
+        close_price_2 > (open_price_1 + close_price_1) / 2  # إغلاق الشمعة الثانية أعلى منتصف الأولى
+    )
+
+
+def detect_three_white_soldiers(data):
+    """
+    كشف نمط الجنود الثلاثة البيض (Three White Soldiers)
+    """
+    close_1 = data['Close'].iloc[-3]
+    open_1 = data['Open'].iloc[-3]
+    close_2 = data['Close'].iloc[-2]
+    open_2 = data['Open'].iloc[-2]
+    close_3 = data['Close'].iloc[-1]
+    open_3 = data['Open'].iloc[-1]
+
+    return (
+        close_1 > open_1 and  # الشمعة الأولى صاعدة
+        close_2 > open_2 and  # الشمعة الثانية صاعدة
+        close_3 > open_3 and  # الشمعة الثالثة صاعدة
+        open_2 > close_1 and  # الشمعة الثانية تفتح فوق إغلاق الأولى
+        open_3 > close_2      # الشمعة الثالثة تفتح فوق إغلاق الثانية
+    )
 
 
 

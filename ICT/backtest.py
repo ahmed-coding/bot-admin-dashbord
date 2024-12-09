@@ -290,8 +290,8 @@ def detect_evening_star(data):
 
 
 class ICTStrategy(Strategy):
-    profit_target = 0.009  # الربح المستهدف كنسبة مئوية
-    stop_loss = 0.02  # إيقاف الخسارة كنسبة مئوية
+    profit_target = 0.01  # الربح المستهدف كنسبة مئوية
+    stop_loss = 0.01  # إيقاف الخسارة كنسبة مئوية
     rsi_period = 8
     def init(self):
         """

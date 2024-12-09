@@ -39,7 +39,7 @@ balance = helper.get_futuer_usdt_balance(client) # الرصيد المبدئي �
 investment=0.5 # حجم كل صفقة
 base_profit_target=0.01 # نسبة الربح
 # base_profit_target=0.005 # نسبة الربح
-base_stop_loss=0.03 # نسبة الخسارة
+base_stop_loss=0.01 # نسبة الخسارة
 # base_stop_loss=0.000 # نسبة الخسارة
 timeout=60 # وقت انتهاء وقت الصفقة
 commission_rate = 0.002 # نسبة العمولة للمنصة
@@ -71,7 +71,7 @@ __active_symbol = {}
 _symbols = client.futures_exchange_info()['symbols']
 valid_symbols = [s['symbol'] for s in _symbols]
 
-MAX_POSITIONS = 6
+MAX_POSITIONS = 4
 
 
 
