@@ -37,9 +37,9 @@ balance = helper.get_futuer_usdt_balance(client) # الرصيد المبدئي �
 # balance = 3# الرصيد المبدئي للبوت
 
 investment=0.5 # حجم كل صفقة
-base_profit_target=0.009 # نسبة الربح
+base_profit_target=0.01 # نسبة الربح
 # base_profit_target=0.005 # نسبة الربح
-base_stop_loss=0.02 # نسبة الخسارة
+base_stop_loss=0.03 # نسبة الخسارة
 # base_stop_loss=0.000 # نسبة الخسارة
 timeout=60 # وقت انتهاء وقت الصفقة
 commission_rate = 0.002 # نسبة العمولة للمنصة
@@ -71,7 +71,7 @@ __active_symbol = {}
 _symbols = client.futures_exchange_info()['symbols']
 valid_symbols = [s['symbol'] for s in _symbols]
 
-MAX_POSITIONS = 10
+MAX_POSITIONS = 6
 
 
 
@@ -115,7 +115,7 @@ def open_futures_trade(symbol, investment, leverage):
     # print(f"لا يجب شراء {symbol} في الوقت الحالي ")
         return
     
-    time.sleep(3)
+    # time.sleep(3)
     try:
         # ضبط الرافعة المالية
         client.futures_change_leverage(symbol=symbol, leverage=leverage)
@@ -130,7 +130,7 @@ def open_futures_trade(symbol, investment, leverage):
         current_price = float(ticker['price'])
         # price = float(ticker['price'])
         # qty_precision = get_qty_precision(symbol)
-        price_precision = get_price_precision(client,symbol)
+        # price_precision = get_price_precision(client,symbol)
         # qty = round(leverage/price, qty_precision)
         
         # حساب الكمية بالدقة المناسبة
@@ -140,11 +140,11 @@ def open_futures_trade(symbol, investment, leverage):
         # quantity = helper.adjust_futuer_quantity(client, symbol,((investment * leverage )/ current_price))
         quantity = helper.QUN_Precision(client,((investment * leverage )/ current_price),symbol,)
         
-        _target_price = current_price * (1 + base_profit_target)
-        _stop_loss_price = current_price * (1 - base_stop_loss)
+        _target_price = current_price * (1 - base_profit_target)
+        _stop_loss_price = current_price * (1 + base_stop_loss)
         # price_precision = helper.adjust_futuser_price_precision(client, symbol, current_price * (1 + base_profit_target))
         # target_price = round(_target_price, price_precision)
-        stop_loss_price = round(_stop_loss_price, price_precision)
+        stop_loss_price = float(helper.Pric_Precision(client,_stop_loss_price, symbol))
         target_price = float(helper.Pric_Precision(client, _target_price, symbol))
         # _target_price = current_price * (1 + base_profit_target)
         # _stop_loss_price = current_price * (1 - base_stop_loss)
@@ -167,19 +167,19 @@ def open_futures_trade(symbol, investment, leverage):
 
         
         #         # تنفيذ أمر شراء بالسوق
-        order = client.futures_create_order(
-            symbol=symbol,
-            side='BUY',
-            type='MARKET',
-            quantity=quantity
-        )
-                # تنفيذ أمر شراء بالسوق
         # order = client.futures_create_order(
         #     symbol=symbol,
-        #     side='SELL',
+        #     side='BUY',
         #     type='MARKET',
         #     quantity=quantity
         # )
+                # تنفيذ أمر شراء بالسوق
+        order = client.futures_create_order(
+            symbol=symbol,
+            side='SELL',
+            type='MARKET',
+            quantity=quantity
+        )
         helper.update_futuer_active_trades(client)
 
         order_response= request_load.create_trad(payload)
@@ -193,20 +193,20 @@ def open_futures_trade(symbol, investment, leverage):
         # stop_loss_price = current_price * (1 - base_stop_loss)
 
         # إعداد أمر جني الأرباح
-        # client.futures_create_order(
-        #     symbol=symbol,
-        #     side='BUY',
-        #     type='TAKE_PROFIT_MARKET',
-        #     stopPrice=target_price,
-        #     closePosition=True
-        # )
         client.futures_create_order(
             symbol=symbol,
-            side='SELL',
+            side='BUY',
             type='TAKE_PROFIT_MARKET',
             stopPrice=target_price,
             closePosition=True
         )
+        # client.futures_create_order(
+        #     symbol=symbol,
+        #     side='SELL',
+        #     type='TAKE_PROFIT_MARKET',
+        #     stopPrice=target_price,
+        #     closePosition=True
+        # )
         # client.futures_create_order(
         #     symbol=symbol,
         #     side='BUY',
@@ -228,13 +228,13 @@ def open_futures_trade(symbol, investment, leverage):
         #     stopPrice=stop_loss_price,
         #     closePosition=True
         # )
-        # client.futures_create_order(
-        #     symbol=symbol,
-        #     side="BUY",
-        #     type="STOP_MARKET",
-        #     stopPrice=stop_loss_price,
-        #     closePosition=True
-        # )
+        client.futures_create_order(
+            symbol=symbol,
+            side="BUY",
+            type="STOP_MARKET",
+            stopPrice=stop_loss_price,
+            closePosition=True
+        )
         print(f"تم تعيين وقف الخسارة عند {stop_loss_price}.")
         # تسجيل البيانات في حال أردت المتابعة لاحقًا
         payload = {

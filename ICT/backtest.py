@@ -11,7 +11,7 @@ import ta
 
 klines_interval=Client.KLINE_INTERVAL_15MINUTE
 count_top_symbols=200
-analize_period=80
+analize_period= 80
 excluded_symbols = set()  # قائمة العملات المستثناة بسبب أخطاء متكررة
 klines_limit=20
 black_list=[
@@ -75,7 +75,8 @@ def detect_bos(data):
     اكتشاف كسر الهيكل (BOS) في بيانات Pandas.
     """
     # data['BOS'] = (data['Close'] > data['High'].shift(1)) | (data['Close'] < data['Low'].shift(1))
-    data['BOS'] = ((data['Close'] > data['Close'].shift(1)) & (data['Close'] > data['High'].shift(1)))
+    data['BOS'] = ((data['Close'] > data['Close'].shift(1)) | (data['Close'] > data['High'].shift(1)))
+
     # data['BOS'] = ((data['Close'] > data['High'].shift(1)))
     # data['BOS'] = ((data['Close'] > data['High'].shift(1)))
     # data['BOS'] = ((data['Close'] > data['Close'].shift(1)))
@@ -194,8 +195,102 @@ def detect_inverse_head_and_shoulders(data):
     return False
 
 
+
+
+
+
+def detect_shooting_star(data):
+    open_price = data['Open'][-1]
+    close_price = data['Close'][-1]
+    high_price = data['High'][-1]
+    low_price = data['Low'][-1]
+    
+    body = abs(close_price - open_price)
+    upper_shadow = high_price - max(open_price, close_price)
+    lower_shadow = min(open_price, close_price) - low_price
+
+    is_shooting_star = (
+        body < (high_price - low_price) * 0.3 and
+        upper_shadow > body * 2 and
+        lower_shadow < body * 0.2
+    )
+    return is_shooting_star
+
+
+def detect_bearish_engulfing(data):
+    open_price_1 = data['Open'][-2]
+    close_price_1 = data['Close'][-2]
+    open_price_2 = data['Open'][-1]
+    close_price_2 = data['Close'][-1]
+
+    is_bearish_engulfing = (
+        close_price_1 > open_price_1 and
+        open_price_2 > close_price_1 and
+        close_price_2 < open_price_1
+    )
+    return is_bearish_engulfing
+
+
+def detect_double_top(data):
+    highs = data['High']
+    is_double_top = (
+        highs[-2] == max(highs[-5:]) and
+        highs[-3] == max(highs[-5:]) and
+        highs[-2] == highs[-3]  # القمتان متساويتان
+    )
+    return is_double_top
+
+
+def detect_head_and_shoulders(data):
+    highs = data['High']
+    is_head_and_shoulders = (
+        highs[-4] < highs[-3] and  # الكتف الأول
+        highs[-3] > highs[-2] and  # الرأس أعلى من الكتف
+        highs[-2] < highs[-3] and  # الكتف الثاني
+        highs[-1] < highs[-2]      # تأكيد الكسر
+    )
+    return is_head_and_shoulders
+
+def detect_inverted_hammer(data):
+    open_price = data['Open'][-1]
+    close_price = data['Close'][-1]
+    high_price = data['High'][-1]
+    low_price = data['Low'][-1]
+
+    body = abs(close_price - open_price)
+    upper_shadow = high_price - max(open_price, close_price)
+    lower_shadow = min(open_price, close_price) - low_price
+
+    is_inverted_hammer = (
+        body < (high_price - low_price) * 0.3 and
+        upper_shadow > body * 2 and
+        lower_shadow < body * 0.2
+    )
+    return is_inverted_hammer
+
+
+def detect_evening_star(data):
+    open_price_1 = data['Open'][-3]
+    close_price_1 = data['Close'][-3]
+    open_price_2 = data['Open'][-2]
+    close_price_2 = data['Close'][-2]
+    open_price_3 = data['Open'][-1]
+    close_price_3 = data['Close'][-1]
+
+    is_evening_star = (
+        close_price_1 > open_price_1 and  # الشمعة الأولى صاعدة
+        close_price_2 > close_price_1 and  # الشمعة الثانية صاعدة أكثر
+        close_price_3 < (open_price_1 + close_price_1) / 2 and  # الشمعة الثالثة تغلق تحت منتصف الأولى
+        close_price_3 < open_price_3  # الشمعة الثالثة هابطة
+    )
+    return is_evening_star
+
+
+
+
+
 class ICTStrategy(Strategy):
-    profit_target = 0.01  # الربح المستهدف كنسبة مئوية
+    profit_target = 0.009  # الربح المستهدف كنسبة مئوية
     stop_loss = 0.02  # إيقاف الخسارة كنسبة مئوية
     rsi_period = 8
     def init(self):
@@ -215,11 +310,27 @@ class ICTStrategy(Strategy):
     def next(self):
         
         
-        bos_detected = self.data.BOS[-1]
-        double_bottom = detect_double_bottom(self.data)
-        inverse_hns = detect_inverse_head_and_shoulders(self.data)
-        hammer= detect_hammer(self.data)
         
+        shooting_star = detect_shooting_star(self.data)
+        bearish_engulfing = detect_bearish_engulfing(self.data)
+        evening_star = detect_evening_star(self.data)
+        double_top = detect_double_top(self.data)
+        head_and_shoulders = detect_head_and_shoulders(self.data)
+        inverted_hammer = detect_inverted_hammer(self.data)
+        bos_detected = self.data.BOS[-1]
+
+
+        if  shooting_star or bearish_engulfing or evening_star or double_top or head_and_shoulders or inverted_hammer :
+            close_price = self.data.Close[-1]
+            stop_loss_price = close_price * (1 + self.stop_loss)
+            take_profit_price = close_price * (1 - self.profit_target)
+            self.sell(sl=stop_loss_price, tp=take_profit_price)
+            
+            # bos_detected = self.data.BOS[-1]
+            # double_bottom = detect_double_bottom(self.data)
+            # inverse_hns = detect_inverse_head_and_shoulders(self.data)
+            # hammer= detect_hammer(self.data)
+            
         
         # # print(f"BOS Detected: {bos_detected}")
         close_price = self.data.Close[-1]
@@ -245,7 +356,7 @@ class ICTStrategy(Strategy):
 
         # if bos_detected and (double_bottom or inverse_hns or hammer):
         # if bos_detected  and (self.rsi[-1] > 25 and self.rsi[-1] < 45) and (inverse_hns or hammer):
-        if bos_detected  and (double_bottom or inverse_hns or hammer):
+        # if bos_detected  and (double_bottom or inverse_hns or hammer):
 
         # if bos_detected  and (inverse_hns or hammer):
         
@@ -253,10 +364,13 @@ class ICTStrategy(Strategy):
 
         #     # print("BOS Signal Detected!")
         #     # اختبر بشكل مستقل من دون FVG
-            stop_loss_price = close_price * (1 - self.stop_loss)
-            take_profit_price = close_price * (1 + self.profit_target)
-            self.buy(sl=stop_loss_price, tp=take_profit_price)
+            # stop_loss_price = close_price * (1 - self.stop_loss)
+            # take_profit_price = close_price * (1 + self.profit_target)
+            # self.buy(sl=stop_loss_price, tp=take_profit_price)
             
+            # stop_loss_price = close_price * (1 + self.stop_loss)
+            # take_profit_price = close_price * (1 - self.profit_target)
+            # self.sell(sl=stop_loss_price, tp=take_profit_price)
             
         # fvg_zones = detect_fvg(self.data)
         # bos_detected = self.data.BOS[-1]
