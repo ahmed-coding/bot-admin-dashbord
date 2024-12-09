@@ -111,7 +111,7 @@ def open_futures_trade(symbol, investment, leverage):
     # # print(f"لا يجب شراء {symbol} في الوقت الحالي ")
     #     return
     
-    if not helper.rsi_ict_should_open_futuer_trade(client=client, symbol=symbol, interval=klines_interval,limit=analize_period,rsi_period=rsi_analize_period):
+    if not helper.pattern_should_open_trade(client=client, symbol=symbol, interval=klines_interval,limit=analize_period,rsi_period=rsi_analize_period):
     # print(f"لا يجب شراء {symbol} في الوقت الحالي ")
         return
     

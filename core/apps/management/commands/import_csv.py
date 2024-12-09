@@ -49,6 +49,7 @@ class Command(BaseCommand):
 
                 # Bulk create the data
                 model_class.objects.bulk_create(data_list)
+                model_class.objects.filter(symbol='Total').delete()
                 self.stdout.write(self.style.SUCCESS(f"Data imported successfully for {model_name} model from {csv_file}"))
 
         except Exception as e:

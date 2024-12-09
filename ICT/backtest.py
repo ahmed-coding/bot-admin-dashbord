@@ -11,7 +11,7 @@ import ta
 
 klines_interval=Client.KLINE_INTERVAL_5MINUTE
 count_top_symbols=70
-analize_period=150
+analize_period=80
 excluded_symbols = set()  # قائمة العملات المستثناة بسبب أخطاء متكررة
 klines_limit=20
 black_list=[
@@ -44,14 +44,38 @@ def get_top_symbols(limit=20, profit_target=0.007, rsi_threshold=70):
 
 
 
+def detect_hammer(data):
+    """
+    دالة للكشف عن نمط المطرقة في البيانات.
+    """
+    # احصل على البيانات مباشرة من الكائن
+    open_price = data['Open'][-1]
+    high_price = data['High'][-1]
+    low_price = data['Low'][-1]
+    close_price = data['Close'][-1]
+
+    # حساب جسم الشمعة والظلال
+    body = abs(close_price - open_price)  # طول الجسم
+    lower_shadow = abs(open_price - low_price) if close_price > open_price else abs(close_price - low_price)  # الظل السفلي
+    upper_shadow = abs(high_price - close_price) if close_price > open_price else abs(high_price - open_price)  # الظل العلوي
+
+    # التحقق من شروط نمط المطرقة
+    is_hammer = (
+        body < (high_price - low_price) * 0.3 and  # الجسم صغير مقارنة بالمدى
+        lower_shadow > body * 2 and  # الظل السفلي أطول بمرتين من الجسم
+        upper_shadow < body * 0.3  # الظل العلوي قصير جدًا
+    )
+    return is_hammer
+
+
 
 
 def detect_bos(data):
     """
     اكتشاف كسر الهيكل (BOS) في بيانات Pandas.
     """
-    data['BOS'] = (data['Close'] > data['High'].shift(1)) | (data['Close'] < data['Low'].shift(1))
-    # data['BOS'] = ((data['Close'] > data['Close'].shift(1)) & (data['Close'] > data['High'].shift(1)))
+    # data['BOS'] = (data['Close'] > data['High'].shift(1)) | (data['Close'] < data['Low'].shift(1))
+    data['BOS'] = ((data['Close'] > data['Close'].shift(1)) | (data['Close'] > data['High'].shift(1)))
     # data['BOS'] = ((data['Close'] > data['High'].shift(1)))
     # data['BOS'] = ((data['Close'] > data['High'].shift(1)))
     # data['BOS'] = ((data['Close'] > data['Close'].shift(1)))
@@ -100,6 +124,75 @@ def bol_l(df):
     return ta.volatility.BollingerBands(pd.Series(df)).bollinger_lband() 
 
 
+# def detect_double_bottom(data):
+#     """
+#     اكتشاف نمط القاع المزدوج في البيانات.
+    
+#     Args:
+#         data (DataFrame): بيانات الشموع (Pandas DataFrame).
+    
+#     Returns:
+#         bool: True إذا تم اكتشاف القاع المزدوج، False إذا لم يتم.
+#     """
+#     if len(data) < 5:  # التأكد من وجود بيانات كافية
+#         return False
+    
+#     lows = data['Low']
+#     # التحقق من القاعين المتساويين نسبياً
+#     if (
+#         lows.iloc[-3] < lows.iloc[-4] and  # القاع الأول أقل من السابق
+#         lows.iloc[-3] == lows.iloc[-1] and  # القاع الأول يساوي القاع الثاني
+#         data['Close'].iloc[-1] > data['High'].iloc[-2]  # الإغلاق بعد القاع الثاني أعلى من القمة بين القاعين
+#     ):
+#         return True
+    
+#     return False
+
+def detect_double_bottom(data):
+    """
+    دالة للكشف عن نمط القاع المزدوج.
+    """
+    lows = pd.Series(data['Low'])
+    
+    # التحقق من أن هناك عددًا كافيًا من القيم
+    if len(lows) < 5:
+        return False
+
+    # شروط القاع المزدوج
+    double_bottom_detected = (
+        lows.iloc[-3] < lows.iloc[-4] and  # القاع الأول أقل من السابق
+        lows.iloc[-3] < lows.iloc[-2] and  # القاع الأول أقل من القاع الثاني
+        lows.iloc[-1] > lows.iloc[-3]      # السعر الحالي أعلى من القاع الأول
+    )
+    return double_bottom_detected
+
+
+
+def detect_inverse_head_and_shoulders(data):
+    """
+    اكتشاف نمط الرأس والكتفين المقلوب.
+    
+    Args:
+        data (DataFrame): بيانات الشموع (Pandas DataFrame).
+    
+    Returns:
+        bool: True إذا تم اكتشاف النمط، False إذا لم يتم.
+    """
+    if len(data) < 7:  # التأكد من وجود بيانات كافية
+        return False
+    
+    lows = pd.Series(data['Low'])
+    highs = pd.Series(data['High'])
+    # تحقق من الرأس والكتفين
+    if (
+        lows.iloc[-5] > lows.iloc[-3] and  # الكتف الأيسر
+        lows.iloc[-3] < lows.iloc[-1] and  # الرأس
+        highs.iloc[-3] > highs.iloc[-5] and highs.iloc[-3] > highs.iloc[-1]  # الرأس أعلى
+    ):
+        return True
+    
+    return False
+
 
 class ICTStrategy(Strategy):
     profit_target = 0.01  # الربح المستهدف كنسبة مئوية
@@ -123,19 +216,40 @@ class ICTStrategy(Strategy):
         
         
         bos_detected = self.data.BOS[-1]
-        # print(f"BOS Detected: {bos_detected}")
+        double_bottom = detect_double_bottom(self.data)
+        inverse_hns = detect_inverse_head_and_shoulders(self.data)
+        hammer= detect_hammer(self.data)
+        
+        
+        # # print(f"BOS Detected: {bos_detected}")
         close_price = self.data.Close[-1]
-        fvg_zones = detect_fvg(self.data)
+        # fvg_zones = detect_fvg(self.data)
 
-        # if bos_detected and self.data.Close[-3] > self.bol_l[-3] and self.data.Close[-2] < self.bol_l[-2] :
-        # if bos_detected and self.data.Close[-3] > self.bol_l[-3] and self.data.Close[-2] < self.bol_l[-2] and self.rsi[-1] > 25 and self.rsi[-1] < 45:
-        # if bos_detected and self.data.Close[-3] > self.bol_l[-3] and self.data.Close[-2] < self.bol_l[-2]:
+        # # if bos_detected and self.data.Close[-3] > self.bol_l[-3] and self.data.Close[-2] < self.bol_l[-2] :
+        # # if bos_detected and self.data.Close[-3] > self.bol_l[-3] and self.data.Close[-2] < self.bol_l[-2] and self.rsi[-1] > 25 and self.rsi[-1] < 45:
+        # # if bos_detected and self.data.Close[-3] > self.bol_l[-3] and self.data.Close[-2] < self.bol_l[-2]:
+        # if bos_detected and (double_bottom or inverse_hns):
+        # if inverse_hns :
+        # if (double_bottom and inverse_hns )or hammer:
+        # if (double_bottom and hammer  )or inverse_hns:
 
-        if bos_detected and self.rsi[-1] < 40:
+        # if (hammer  and inverse_hns ) or double_bottom:
+        # if (hammer and double_bottom   )or inverse_hns:
+
+        
+        # if (inverse_hns and hammer  ) or double_bottom:
+        # if (inverse_hns and double_bottom ) or hammer :
+        # if inverse_hns and double_bottom  and hammer :
+
+        # if self.rsi[-1] < 40 and (double_bottom or inverse_hns or hammer):
+
+        # if bos_detected and (double_bottom or inverse_hns or hammer):
+        if bos_detected and self.rsi[-1] < 40 and (double_bottom or inverse_hns or hammer):
+        
         # if bos_detected and self.rsi[-2] > 25 and self.rsi[-2] < 45:
 
-            # print("BOS Signal Detected!")
-            # اختبر بشكل مستقل من دون FVG
+        #     # print("BOS Signal Detected!")
+        #     # اختبر بشكل مستقل من دون FVG
             stop_loss_price = close_price * (1 - self.stop_loss)
             take_profit_price = close_price * (1 + self.profit_target)
             self.buy(sl=stop_loss_price, tp=take_profit_price)

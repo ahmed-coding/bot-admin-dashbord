@@ -376,14 +376,29 @@ def fetch_ris_binance_data(client, symbol, intervel , limit):
 
 
 
-def fetch_ict_ris_binance_data(client, symbol, intervel , limit):
+def fetch_ict_ris_binance_data(client, symbol, interval, period=14, limit=500):
+    """
+    جلب بيانات RSI بناءً على أسعار الإغلاق.
     
-    klines = client.get_klines(symbol=symbol, interval=intervel, limit=limit +1)
+    Args:
+        client: كائن العميل للتواصل مع Binance API.
+        symbol (str): رمز الزوج (مثل BTCUSDT).
+        interval (str): الإطار الزمني (مثل 5m، 15m).
+        period (int): فترة حساب RSI.
+        limit (int): عدد الشموع المطلوبة.
+        
+    Returns:
+        float: قيمة RSI الأخيرة.
+    """
+    # جلب بيانات الشموع
+    candles = client.futures_klines(symbol=symbol, interval=interval, limit=limit + period)
+    closing_prices = [float(candle[4]) for candle in candles]
     
-    closing_prices = [float(kline[4]) for kline in klines]
-    closing_prices = closing_prices[:-1]
-
-    return calculate_rsi(closing_prices,limit)
+    # حساب RSI
+    rsi_values = calculate_rsi(closing_prices, period=period)
+    
+    # إعادة آخر قيمة RSI
+    return rsi_values[-1] if rsi_values else None
 
 
 
@@ -425,13 +440,13 @@ def detect_bos(data):
     # data['BOS'] = (data['Close'] > data['High'].shift(1)) | (data['Close'] < data['Low'].shift(1))
     # data['BOS'] = (data['Close'] > data['High'].shift(1)) | (data['Close'] < data['Low'].shift(1))
     # data['BOS'] = ((data['Close'] > data['Close'].shift(1)) | (data['Close'] > data['High'].shift(1)))
-    data['BOS'] = ((data['Close'] > data['Close'].shift(1)) & (data['Close'] > data['High'].shift(1)))
+    data['BOS'] = ((data['Close'] > data['Close'].shift(1)) | (data['Close'] > data['High'].shift(1)))
 
     # data['BOS'] = ((data['Close'] > data['High'].shift(1)))
     # data['BOS'] = ((data['Close'] > data['High'].shift(1)))
-    # data['BOS'] = ((data['Close'] > data['Close'].shift(1)))
+    # data['BOS'] = (data['Close'] > data['Close'].shift(1) | (data['Close'] < data['Low'].shift(1)))
 
-    return data['BOS'].iloc[-2]  # استخدام آخر قيمة BOS
+    return data['BOS'].iloc[-1]  # استخدام آخر قيمة BOS
 
 
 
@@ -507,3 +522,106 @@ def Pric_Precision(client, price, symbol):
 
 def QUN_Precision(client,quantity, symbol):
     return str(round(float(quantity),[x['quantityPrecision'] for x in client.futures_exchange_info()['symbols'] if x['symbol'] == symbol][0]))
+
+
+
+def detect_double_bottom(data):
+    """
+    اكتشاف نمط القاع المزدوج في البيانات.
+    
+    Args:
+        data (DataFrame): بيانات الشموع (Pandas DataFrame).
+    
+    Returns:
+        bool: True إذا تم اكتشاف القاع المزدوج، False إذا لم يتم.
+    """
+    if len(data) < 5:  # التأكد من وجود بيانات كافية
+        return False
+    
+    lows = data['Low']
+    # التحقق من القاعين المتساويين نسبياً
+    if (
+        lows.iloc[-3] < lows.iloc[-4] and  # القاع الأول أقل من السابق
+        lows.iloc[-3] == lows.iloc[-1] and  # القاع الأول يساوي القاع الثاني
+        data['Close'].iloc[-1] > data['High'].iloc[-2]  # الإغلاق بعد القاع الثاني أعلى من القمة بين القاعين
+    ):
+        return True
+    
+    return False
+
+
+def detect_inverse_head_and_shoulders(data):
+    """
+    اكتشاف نمط الرأس والكتفين المقلوب.
+    
+    Args:
+        data (DataFrame): بيانات الشموع (Pandas DataFrame).
+    
+    Returns:
+        bool: True إذا تم اكتشاف النمط، False إذا لم يتم.
+    """
+    if len(data) < 7:  # التأكد من وجود بيانات كافية
+        return False
+    
+    lows = data['Low']
+    highs = data['High']
+    # تحقق من الرأس والكتفين
+    if (
+        lows.iloc[-5] > lows.iloc[-3] and  # الكتف الأيسر
+        lows.iloc[-3] < lows.iloc[-1] and  # الرأس
+        highs.iloc[-3] > highs.iloc[-5] and highs.iloc[-3] > highs.iloc[-1]  # الرأس أعلى
+    ):
+        return True
+    
+    return False
+
+
+def detect_hammer(data):
+    """
+    دالة للكشف عن نمط المطرقة في البيانات.
+    """
+    # احصل على البيانات اللازمة
+    open_price = data['Open'].iloc[-1]
+    high_price = data['High'].iloc[-1]
+    low_price = data['Low'].iloc[-1]
+    close_price = data['Close'].iloc[-1]
+
+    # حساب جسم الشمعة والظلال
+    body = abs(close_price - open_price)  # طول الجسم
+    lower_shadow = abs(open_price - low_price) if close_price > open_price else abs(close_price - low_price)  # الظل السفلي
+    upper_shadow = abs(high_price - close_price) if close_price > open_price else abs(high_price - open_price)  # الظل العلوي
+
+    # التحقق من شروط نمط المطرقة
+    is_hammer = (
+        body < (high_price - low_price) * 0.3 and  # الجسم صغير مقارنة بالمدى
+        lower_shadow > body * 2 and  # الظل السفلي أطول بمرتين من الجسم
+        upper_shadow < body * 0.3  # الظل العلوي قصير جدًا
+    )
+    return is_hammer
+
+
+
+def pattern_should_open_trade(client, symbol, interval, limit, rsi_period):
+    """
+    التحقق مما إذا كانت هناك فرصة لفتح صفقة بناءً على RSI و BOS والأنماط.
+    
+    Returns:
+        bool: True إذا كانت الشروط متوفرة لفتح صفقة، False إذا لم تكن.
+    """
+    # جلب البيانات
+    data = fetch_ict_data(client, symbol, interval, limit=limit)
+    rsi = fetch_ict_ris_binance_data(client, symbol, interval, period=rsi_period, limit=limit)
+    
+    # if data is None or len(data) < limit or rsi is None:
+    #     print(f"⚠️ بيانات غير كافية لتحليل {symbol}")
+    #     return False
+
+    # التحقق من الشروط
+    bos = detect_bos(data)
+    double_bottom = detect_double_bottom(data)
+    inverse_hns = detect_inverse_head_and_shoulders(data)
+    hammer= detect_hammer(data)
+    if bos  and rsi < 40 and  (double_bottom or inverse_hns or hammer):
+        return True  # إشارة شراء قوية
+    
+    return False

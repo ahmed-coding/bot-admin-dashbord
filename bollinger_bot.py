@@ -265,9 +265,6 @@ def update_prices():
     while True:
         # check_btc= check_btc_price()
         check_btc=True
-        if balance < investment:
-    # print(f"{datetime.now()} - {symbol} -الرصيد الحالي غير كافٍ لفتح صفقة جديدة.")
-            return
         for symbol in symbols_to_trade:
             
 
@@ -277,7 +274,7 @@ def update_prices():
             try:
                 current_prices[symbol] = float(client.get_symbol_ticker(symbol=symbol)['price'])
                 # print(f"تم تحديث السعر لعملة {symbol}: {current_prices[symbol]}")
-                if symbol not in active_trades and check_btc:
+                if symbol not in active_trades and check_btc and not balance < investment:
                     open_trade_with_dynamic_target(symbol,investment=investment,base_profit_target=base_profit_target,base_stop_loss=base_stop_loss,timeout=timeout)
             except BinanceAPIException as e:
                 print(f"خطأ في تحديث السعر لـ {symbol}: {e}")
