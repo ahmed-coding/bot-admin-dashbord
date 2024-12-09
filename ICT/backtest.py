@@ -9,8 +9,8 @@ import ta
 # استخدم دالة fetch_historical_data لتحميل البيانات
 # أو قم بتحميل بيانات جاهزة في صيغة DataFrame
 
-klines_interval=Client.KLINE_INTERVAL_5MINUTE
-count_top_symbols=70
+klines_interval=Client.KLINE_INTERVAL_15MINUTE
+count_top_symbols=200
 analize_period=80
 excluded_symbols = set()  # قائمة العملات المستثناة بسبب أخطاء متكررة
 klines_limit=20
@@ -75,7 +75,7 @@ def detect_bos(data):
     اكتشاف كسر الهيكل (BOS) في بيانات Pandas.
     """
     # data['BOS'] = (data['Close'] > data['High'].shift(1)) | (data['Close'] < data['Low'].shift(1))
-    data['BOS'] = ((data['Close'] > data['Close'].shift(1)) | (data['Close'] > data['High'].shift(1)))
+    data['BOS'] = ((data['Close'] > data['Close'].shift(1)) & (data['Close'] > data['High'].shift(1)))
     # data['BOS'] = ((data['Close'] > data['High'].shift(1)))
     # data['BOS'] = ((data['Close'] > data['High'].shift(1)))
     # data['BOS'] = ((data['Close'] > data['Close'].shift(1)))
@@ -244,7 +244,10 @@ class ICTStrategy(Strategy):
         # if self.rsi[-1] < 40 and (double_bottom or inverse_hns or hammer):
 
         # if bos_detected and (double_bottom or inverse_hns or hammer):
-        if bos_detected and self.rsi[-1] < 40 and (double_bottom or inverse_hns or hammer):
+        # if bos_detected  and (self.rsi[-1] > 25 and self.rsi[-1] < 45) and (inverse_hns or hammer):
+        if bos_detected  and (double_bottom or inverse_hns or hammer):
+
+        # if bos_detected  and (inverse_hns or hammer):
         
         # if bos_detected and self.rsi[-2] > 25 and self.rsi[-2] < 45:
 
@@ -315,7 +318,7 @@ result=[]
 # تنفيذ الباكتيست
 if __name__ == "__main__":
     # استخدم بيانات Binance أو بيانات جاهزة
-    for symbol in get_top_symbols(200):
+    for symbol in get_top_symbols(count_top_symbols):
         # data = fetch_binance_data(symbol, Client.KLINE_INTERVAL_3MINUTE, "12 hours ago UTC", "6 hours ago UTC")
         data = load_data(symbol, klines_interval, analize_period)
 

@@ -366,6 +366,54 @@ def calculate_rsi(prices, period=14):
     return rsi
 
 
+
+# حساب مؤشر RSI
+def ict_calculate_rsi(prices, period=14):
+    """
+    حساب مؤشر RSI بناءً على فترة محددة.
+    
+    Args:
+        prices (list): قائمة بأسعار الإغلاق.
+        period (int): فترة الحساب (default: 14).
+    
+    Returns:
+        list: قائمة بقيم RSI لكل فترة.
+    """
+    if len(prices) < period + 1:
+        raise ValueError("عدد البيانات أقل من الفترة المطلوبة لحساب RSI.")
+    
+    # حساب التغيرات (Deltas)
+    deltas = [prices[i] - prices[i - 1] for i in range(1, len(prices))]
+    
+    # المكاسب والخسائر الأولية
+    gains = [max(delta, 0) for delta in deltas]
+    losses = [abs(min(delta, 0)) for delta in deltas]
+    
+    # حساب متوسط المكاسب والخسائر الأولية
+    avg_gain = sum(gains[:period]) / period
+    avg_loss = sum(losses[:period]) / period
+    
+    # قائمة لقيم RSI
+    rsis = []
+    
+    # البدء من الفترة بعد حساب المتوسطات الأولية
+    for i in range(period, len(prices) - 1):
+        gain = gains[i]
+        loss = losses[i]
+        
+        # المتوسطات الملساء
+        avg_gain = ((avg_gain * (period - 1)) + gain) / period
+        avg_loss = ((avg_loss * (period - 1)) + loss) / period
+        
+        # حساب RSI
+        rs = avg_gain / avg_loss if avg_loss != 0 else 0
+        rsi = 100 - (100 / (1 + rs))
+        
+        rsis.append(rsi)
+    
+    return rsis
+
+
 def fetch_ris_binance_data(client, symbol, intervel , limit):
     
     klines = client.get_klines(symbol=symbol, interval=intervel, limit=limit +1)
@@ -395,7 +443,7 @@ def fetch_ict_ris_binance_data(client, symbol, interval, period=14, limit=500):
     closing_prices = [float(candle[4]) for candle in candles]
     
     # حساب RSI
-    rsi_values = calculate_rsi(closing_prices, period=period)
+    rsi_values = ict_calculate_rsi(closing_prices, period=period)
     
     # إعادة آخر قيمة RSI
     return rsi_values[-1] if rsi_values else None
@@ -440,7 +488,7 @@ def detect_bos(data):
     # data['BOS'] = (data['Close'] > data['High'].shift(1)) | (data['Close'] < data['Low'].shift(1))
     # data['BOS'] = (data['Close'] > data['High'].shift(1)) | (data['Close'] < data['Low'].shift(1))
     # data['BOS'] = ((data['Close'] > data['Close'].shift(1)) | (data['Close'] > data['High'].shift(1)))
-    data['BOS'] = ((data['Close'] > data['Close'].shift(1)) | (data['Close'] > data['High'].shift(1)))
+    data['BOS'] = ((data['Close'] > data['Close'].shift(1)) & (data['Close'] > data['High'].shift(1)))
 
     # data['BOS'] = ((data['Close'] > data['High'].shift(1)))
     # data['BOS'] = ((data['Close'] > data['High'].shift(1)))
@@ -610,7 +658,7 @@ def pattern_should_open_trade(client, symbol, interval, limit, rsi_period):
     """
     # جلب البيانات
     data = fetch_ict_data(client, symbol, interval, limit=limit)
-    rsi = fetch_ict_ris_binance_data(client, symbol, interval, period=rsi_period, limit=limit)
+    # rsi = fetch_ict_ris_binance_data(client, symbol, interval, period=rsi_period, limit=limit)
     
     # if data is None or len(data) < limit or rsi is None:
     #     print(f"⚠️ بيانات غير كافية لتحليل {symbol}")
@@ -621,7 +669,9 @@ def pattern_should_open_trade(client, symbol, interval, limit, rsi_period):
     double_bottom = detect_double_bottom(data)
     inverse_hns = detect_inverse_head_and_shoulders(data)
     hammer= detect_hammer(data)
-    if bos  and rsi < 40 and  (double_bottom or inverse_hns or hammer):
+    if bos  and  (double_bottom or inverse_hns or hammer):
+    # if bos and (double_bottom or inverse_hns or hammer):
+
         return True  # إشارة شراء قوية
     
     return False

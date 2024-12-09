@@ -95,12 +95,12 @@ def open_trade_with_dynamic_target(symbol, investment=2.5, base_profit_target=0.
     # avg_volatility = statistics.stdev(closing_prices)
 
     # Ensure both strategies' conditions are met before opening a trade
-    if not helper.rsi_ict_should_open_futuer_trade(client=client, symbol=symbol,interval=klines_interval,limit=analize_period, rsi_period=8):
+    if not helper.pattern_should_open_trade(client=client, symbol=symbol,interval=klines_interval,limit=analize_period, rsi_period=8):
     # if not helper.rsi_ict_should_open_futuer_trade(client=client, symbol=symbol,interval=klines_interval,limit=analize_period, rsi_period=8):
 
         # print(f"لا يجب شراء {symbol} في الوقت الحالي ")
         return
-    time.sleep(5) # لتجنب النزول اثناء فتح الصفقة 
+    time.sleep(3) # لتجنب النزول اثناء فتح الصفقة 
     # Calculate dynamic profit target and stop loss based on volatility
     profit_target = base_profit_target 
     stop_loss = base_stop_loss

@@ -37,13 +37,13 @@ balance = helper.get_futuer_usdt_balance(client) # الرصيد المبدئي �
 # balance = 3# الرصيد المبدئي للبوت
 
 investment=0.5 # حجم كل صفقة
-base_profit_target=0.008 # نسبة الربح
+base_profit_target=0.009 # نسبة الربح
 # base_profit_target=0.005 # نسبة الربح
 base_stop_loss=0.02 # نسبة الخسارة
 # base_stop_loss=0.000 # نسبة الخسارة
 timeout=60 # وقت انتهاء وقت الصفقة
 commission_rate = 0.002 # نسبة العمولة للمنصة
-klines_interval=Client.KLINE_INTERVAL_5MINUTE
+klines_interval=Client.KLINE_INTERVAL_15MINUTE
 klines_limit=14
 count_top_symbols=200
 analize_period=80

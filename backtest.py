@@ -1,131 +1,28 @@
 from backtesting import Backtest, Strategy
 from backtesting.lib import crossover
-# from backtesting.test import GOOG  # مثال على بيانات افتراضية يمكنك استبدالها ببيانات Binance
 import pandas as pd
 import numpy as np
-from binance.client import Client
-import statistics
+# import  config 
 from binance.exceptions import BinanceAPIException
-import ta 
+from  ICT.ict_bot import *
+import ta
+# استخدم دالة fetch_historical_data لتحميل البيانات
+# أو قم بتحميل بيانات جاهزة في صيغة DataFrame
 
-
-api_key = 'of6qt1T1MpGvlgma1qxwFTLdrGNNVsMj0fKf8LZy1sMf3OqTrwHC7BCRIkgsSsda'
-api_secret = 'MZuALJiqyWMoQ0WkPE6tqWdToGLTHLsap5m95qhPIDtizy1FPD0TQBXNvyQBhgFf'
-
-
-# api_key = 'tweOjH1Keln44QaxLCr3naevRPgF3j3sYuOpaAg9B7nUT74MyURemvivEUcihfkt'
-# api_secret = 'XLlku378D8aZzYg9JjOTtUngA8Q73xBCyy7jGVbqRYSoEICsGBfWC0cIsRptLHxb'
-
-# تهيئة الاتصال ببايننس واستخدام Testnet
-client = Client(api_key, api_secret,requests_params={'timeout':90})
-# client.API_URL = 'https://testnet.binance.vision/api'
-
-
-current_prices = {}
-active_trades = {}
-# إدارة المحفظة 0
-balance = 25 # الرصيد المبدئي للبوت
-investment=6 # حجم كل صفقة
-base_profit_target=0.005 # نسبة الربح
-# base_profit_target=0.005ar # نسبة الربح
-# base_stop_loss=0.1 # نسبة الخسارة
-# base_stop_loss=0.000 # نسبة الخسارة
-timeout=60 # وقت انتهاء وقت الصفقة
-commission_rate = 0.002 # نسبة العمولة للمنصة
-excluded_symbols = set()  # قائمة العملات المستثناة بسبب أخطاء متكررة
-# bot_settings=Settings()
-symbols_to_trade =[]
-last_trade_time = {}
-klines_interval=Client.KLINE_INTERVAL_5MINUTE
-klines_limit=1
-top_symbols=[]
-count_top_symbols=70
+klines_interval=Client.KLINE_INTERVAL_15MINUTE
+count_top_symbols=200
 analize_period=80
+excluded_symbols = set()  # قائمة العملات المستثناة بسبب أخطاء متكررة
+klines_limit=20
 black_list=[
-        # # 'XRPUSDT',
-        # 'ETHUSDT', 'BTCUSDT', 'SOLUSDT', 'ENSUSDT', 'BNBUSDT', 'FILUSDT',
-        # 'AVAXUSDT', 'LTCUSDT', 'UNIUSDT', 'ARUSDT', 'LINKUSDT', 'TAOUSDT', 'ORDIUSDT',
-        # 'APTUSDT', 'BCHUSDT', 'ETCUSDT', 
-        # 'MKRUSDT', 'WBTCUSDT', 'ZENUSDT', 'INJUSDT', 'TRBUSDT', 'ICPUSDT', 'SSVUSDT', 'AAVEUSDT', 
-        # 'BTCUSDT',
-        # 'PEPEUSDT',
-        # 'USDCUSDT',
-        # 'FDUSDUSDT',
-        # 'SOLUSDT',
-        # 'WLDUSDT',
-        # 'BNBUSDT',
-        # 'ACTUSDT',
-        # 'PNUTUSDT',
-        # 'ADAUSDT',
-        # 'ENSUSDT',
-        # 'THEUSDT',
-        # 'WIFUSDT',
-        # 'FLOKIUSDT',
-        # 'LTCUSDT',
-        # 'BONKUSDT',
-        # 'ARBUSDT',
-        # 'SANDUSDT',
-        # 'TRXUSDT',
-        # 'TAOUSDT',
-        # 'EOSUSDT',
-        # 'TIAUSDT',
-        # 'APEUSDT',
-        # 'RUNEUSDT',
-        # 'STXUSDT',
-        # 'IOUSDT',
-        # 'JUPUSDT',
-        # 'RENDERUSDT',
-        # 'IOTAUSDT',
-        # 'EURUSDT',
         'USDCUSDT',
         'USTCUSDT',
-        # '',
-        # '',
-        
-        
+
     ]
-
-
-# def get_top_symbols(limit=20, profit_target=0.007, rsi_threshold=70):
-#     tickers = client.futures_ticker()
-#     exchange_info = client.futures_exchange_info()  # جلب معلومات التداول
-#     valid_symbols = {info['symbol'] for info in exchange_info['symbols']}  # الرموز المسموح بها
-#     sorted_tickers = sorted(valid_symbols, key=lambda x: float(x['quoteVolume']), reverse=True)
-#     top_symbols = []
-    
-#     for ticker in sorted_tickers:
-#         if ticker['symbol'].endswith("USDT") and ticker['symbol'] not in black_list :
-#         # if ticker['symbol'].endswith("USDT") and ticker['symbol'] not in excluded_symbols and not 'BTTC' in str(ticker['symbol']):
-#             try:
-#                 klines = client.get_klines(symbol=ticker['symbol'], interval=klines_interval, limit=klines_limit)
-#                 # closing_prices = [float(kline[4]) for kline in klines]
-#                 # stddev = statistics.stdev(closing_prices)
-#                 if klines is None or klines == []:
-#                     # print(f"the data in symbol {symbol} is empty") 
-#                     continue
-#                 # حساب مؤشر RSI
-#                 # rsi = calculate_rsi(closing_prices,period=klines_limit)
-                
-#                 # اختيار العملة بناءً على التذبذب ومؤشر RSI
-#                 # avg_price = sum(closing_prices) / len(closing_prices)
-#                 # volatility_ratio = stddev / avg_price
-
-#                 # if stddev < 0.04 and volatility_ratio >= profit_target :
-#                 top_symbols.append(ticker['symbol'])
-#                     # print(f"تم اختيار العملة {ticker['symbol']} بنسبة تذبذب {volatility_ratio:.4f} و RSI {rsi:.2f}")
-                
-#                 if len(top_symbols) >= limit:
-#                     break
-#             except BinanceAPIException as e:
-#                 print(f"خطأ في جلب بيانات {ticker['symbol']}: {e}")
-#                 excluded_symbols.add(ticker['symbol'])
-#     return top_symbols
 
 
 def get_top_symbols(limit=20, profit_target=0.007, rsi_threshold=70):
     tickers = client.get_ticker()
-    exchange_info = client.futures_exchange_info()  # جلب معلومات التداول
-    valid_symbols = {info['symbol'] for info in exchange_info['symbols']}  # الرموز المسموح بها
     sorted_tickers = sorted(tickers, key=lambda x: float(x['quoteVolume']), reverse=True)
     top_symbols = []
     
@@ -146,14 +43,67 @@ def get_top_symbols(limit=20, profit_target=0.007, rsi_threshold=70):
 
 
 
-def bol_h(df):
-    return ta.volatility.BollingerBands(pd.Series(df)).bollinger_hband() 
+def detect_hammer(data):
+    """
+    دالة للكشف عن نمط المطرقة في البيانات.
+    """
+    # احصل على البيانات مباشرة من الكائن
+    open_price = data['Open'][-1]
+    high_price = data['High'][-1]
+    low_price = data['Low'][-1]
+    close_price = data['Close'][-1]
 
-def bol_l(df):
-    return ta.volatility.BollingerBands(pd.Series(df)).bollinger_lband() 
+    # حساب جسم الشمعة والظلال
+    body = abs(close_price - open_price)  # طول الجسم
+    lower_shadow = abs(open_price - low_price) if close_price > open_price else abs(close_price - low_price)  # الظل السفلي
+    upper_shadow = abs(high_price - close_price) if close_price > open_price else abs(high_price - open_price)  # الظل العلوي
+
+    # التحقق من شروط نمط المطرقة
+    is_hammer = (
+        body < (high_price - low_price) * 0.3 and  # الجسم صغير مقارنة بالمدى
+        lower_shadow > body * 2 and  # الظل السفلي أطول بمرتين من الجسم
+        upper_shadow < body * 0.3  # الظل العلوي قصير جدًا
+    )
+    return is_hammer
 
 
-# حساب مؤشر RSI
+
+
+def detect_bos(data):
+    """
+    اكتشاف كسر الهيكل (BOS) في بيانات Pandas.
+    """
+    # data['BOS'] = (data['Close'] > data['High'].shift(1)) | (data['Close'] < data['Low'].shift(1))
+    data['BOS'] = ((data['Close'] > data['Close'].shift(1)) & (data['Close'] > data['High'].shift(1)))
+    # data['BOS'] = ((data['Close'] > data['High'].shift(1)))
+    # data['BOS'] = ((data['Close'] > data['High'].shift(1)))
+    # data['BOS'] = ((data['Close'] > data['Close'].shift(1)))
+
+    return data
+
+
+def preprocess_data(data):
+    """
+    تجهيز البيانات التاريخية لإضافة مناطق السيولة.
+    """
+    data['Liquidity_Zone_High'] = data['High'].rolling(window=5).max().shift(1)
+    data['Liquidity_Zone_Low'] = data['Low'].rolling(window=5).min().shift(1)
+    data = detect_bos(data)  # إضافة عمود BOS
+
+    return data
+
+
+def load_data(symbol, intervel, period):
+    """
+    تحميل بيانات تاريخية بصيغة OHLCV.
+    """
+    data = fetch_binance_data(symbol, intervel, period,"")  # قم بتغيير الزوج والفاصل الزمني حسب الحاجة
+    # data.set_index('Open_Time', inplace=True)
+    data = preprocess_data(data)  # تجهيز البيانات
+
+    return data
+
+
 def calculate_rsi(data, period=14):
     """حساب RSI متوافق مع مكتبة Backtesting"""
     deltas = pd.Series(data).diff()  # تحويل البيانات إلى pandas Series للتوافق
@@ -165,70 +115,202 @@ def calculate_rsi(data, period=14):
     rsi = 100 - (100 / (1 + rs))
     return rsi
 
-# تعريف الاستراتيجية
-class RSIStrategy(Strategy):
-    rsi_period = 8  # الفترة الزمنية لمؤشر RSI
+
+def bol_h(df):
+    return ta.volatility.BollingerBands(pd.Series(df)).bollinger_hband() 
+
+def bol_l(df):
+    return ta.volatility.BollingerBands(pd.Series(df)).bollinger_lband() 
+
+
+# def detect_double_bottom(data):
+#     """
+#     اكتشاف نمط القاع المزدوج في البيانات.
+    
+#     Args:
+#         data (DataFrame): بيانات الشموع (Pandas DataFrame).
+    
+#     Returns:
+#         bool: True إذا تم اكتشاف القاع المزدوج، False إذا لم يتم.
+#     """
+#     if len(data) < 5:  # التأكد من وجود بيانات كافية
+#         return False
+    
+#     lows = data['Low']
+#     # التحقق من القاعين المتساويين نسبياً
+#     if (
+#         lows.iloc[-3] < lows.iloc[-4] and  # القاع الأول أقل من السابق
+#         lows.iloc[-3] == lows.iloc[-1] and  # القاع الأول يساوي القاع الثاني
+#         data['Close'].iloc[-1] > data['High'].iloc[-2]  # الإغلاق بعد القاع الثاني أعلى من القمة بين القاعين
+#     ):
+#         return True
+    
+#     return False
+
+def detect_double_bottom(data):
+    """
+    دالة للكشف عن نمط القاع المزدوج.
+    """
+    lows = pd.Series(data['Low'])
+    
+    # التحقق من أن هناك عددًا كافيًا من القيم
+    if len(lows) < 5:
+        return False
+
+    # شروط القاع المزدوج
+    double_bottom_detected = (
+        lows.iloc[-3] < lows.iloc[-4] and  # القاع الأول أقل من السابق
+        lows.iloc[-3] < lows.iloc[-2] and  # القاع الأول أقل من القاع الثاني
+        lows.iloc[-1] > lows.iloc[-3]      # السعر الحالي أعلى من القاع الأول
+    )
+    return double_bottom_detected
+
+
+
+def detect_inverse_head_and_shoulders(data):
+    """
+    اكتشاف نمط الرأس والكتفين المقلوب.
+    
+    Args:
+        data (DataFrame): بيانات الشموع (Pandas DataFrame).
+    
+    Returns:
+        bool: True إذا تم اكتشاف النمط، False إذا لم يتم.
+    """
+    if len(data) < 7:  # التأكد من وجود بيانات كافية
+        return False
+    
+    lows = pd.Series(data['Low'])
+    highs = pd.Series(data['High'])
+    # تحقق من الرأس والكتفين
+    if (
+        lows.iloc[-5] > lows.iloc[-3] and  # الكتف الأيسر
+        lows.iloc[-3] < lows.iloc[-1] and  # الرأس
+        highs.iloc[-3] > highs.iloc[-5] and highs.iloc[-3] > highs.iloc[-1]  # الرأس أعلى
+    ):
+        return True
+    
+    return False
+
+
+class ICTStrategy(Strategy):
     profit_target = 0.01  # الربح المستهدف كنسبة مئوية
     stop_loss = 0.02  # إيقاف الخسارة كنسبة مئوية
-
+    rsi_period = 8
     def init(self):
-        # حساب RSI وإضافته كإشارة
+        """
+        تهيئة المؤشرات أو المتغيرات.
+        """
+        # يمكن استخدام متغيرات لحفظ الإشارات المكتشفة
+        # self.data['Liquidity_Zone_High'] = self.data['High'].rolling(window=5).max().shift(1)
+        # self.data['Liquidity_Zone_Low'] = self.data['Low'].rolling(window=5).min().shift(1)
         self.rsi = self.I(calculate_rsi, self.data.Close, self.rsi_period)
         self.bol_h=self.I(bol_h, self.data.Close)
         self.bol_l=self.I(bol_l, self.data.Close)
-        
-        
-    # def next(self):
-        
-    #     price = self.data.Close[-1]
-    #     # فتح صفقة شراء بناءً على RSI
-    #     if self.rsi[-1] > 25 and self.rsi[-1] < 45:
-    #         self.buy(sl=price * (1 - self.stop_loss), tp=price * (1 + self.profit_target))
-
-    #     # إغلاق جميع الصفقات عند تحقيق الهدف أو تجاوز الحد
-    #     for trade in self.trades:
-    #         if trade.is_long:
-    #             if self.rsi[-1] > 70:  # شرط إضافي لإغلاق الصفقات
-                    # self.sell()
-    # def next(self):
-    #     price = self.data.Close[0]
-    #     stop_loss_price = price * (1 - self.stop_loss)
-    #     take_profit_price = price * (1 + self.profit_target)
-    #     # print(f"Price: {price}, Stop Loss: {stop_loss_price}, Take Profit: {take_profit_price}")
-
-    #     # فتح صفقة شراء بناءً على RSI
-    #     if self.rsi[0] > 30:
-    #         # تأكد من أن إيقاف الخسارة أقل من السعر الحالي
-    #         # تأكد من أن إيقاف الخسارة أقل من الربح المستهدف
-    #         if stop_loss_price < price and take_profit_price > price:
-    #             if stop_loss_price < price < take_profit_price:
-    #                 # print(f"Opening Long Order: SL: {stop_loss_price}, TP: {take_profit_price}")
-
-    #                 self.buy(sl=stop_loss_price, tp=take_profit_price)
-
-    #     # إغلاق جميع الصفقات عند تحقيق الهدف أو تجاوز الحد
-    #     for trade in self.trades:
-    #         if trade.is_long:
-    #             if self.rsi[0] > 70:  # شرط إضافي لإغلاق الصفقات
-    #                 self.position.close()
-                    
-                    
+    
+    
+    
+    
     def next(self):
-        price = self.data.Close[-1]
-        stop_loss_price = price * (1 - self.stop_loss)
-        take_profit_price = price * (1 + self.profit_target)
-        if self.data.Close[-3] > self.bol_l[-3] and self.data.Close[-2] < self.bol_l[-2]:
-            if not self.position:
-                self.buy(sl=stop_loss_price, tp=take_profit_price)
-                
         
         
-        # if self.data.Close[-3] < self.bol_h[-3] and self.data.Close[-2] > self.bol_h[-2]:
-        #     for trade in self.trades:
-        #         if trade.is_long:
-        #             self.position.close()
+        bos_detected = self.data.BOS[-1]
+        double_bottom = detect_double_bottom(self.data)
+        inverse_hns = detect_inverse_head_and_shoulders(self.data)
+        hammer= detect_hammer(self.data)
+        
+        
+        # # print(f"BOS Detected: {bos_detected}")
+        close_price = self.data.Close[-1]
+        # fvg_zones = detect_fvg(self.data)
+
+        # # if bos_detected and self.data.Close[-3] > self.bol_l[-3] and self.data.Close[-2] < self.bol_l[-2] :
+        # # if bos_detected and self.data.Close[-3] > self.bol_l[-3] and self.data.Close[-2] < self.bol_l[-2] and self.rsi[-1] > 25 and self.rsi[-1] < 45:
+        # # if bos_detected and self.data.Close[-3] > self.bol_l[-3] and self.data.Close[-2] < self.bol_l[-2]:
+        # if bos_detected and (double_bottom or inverse_hns):
+        # if inverse_hns :
+        # if (double_bottom and inverse_hns )or hammer:
+        # if (double_bottom and hammer  )or inverse_hns:
+
+        # if (hammer  and inverse_hns ) or double_bottom:
+        # if (hammer and double_bottom   )or inverse_hns:
+
+        
+        # if (inverse_hns and hammer  ) or double_bottom:
+        # if (inverse_hns and double_bottom ) or hammer :
+        # if inverse_hns and double_bottom  and hammer :
+
+        # if self.rsi[-1] < 40 and (double_bottom or inverse_hns or hammer):
+
+        if bos_detected and (double_bottom or inverse_hns or hammer):
+        # if bos_detected and self.rsi[-1] < 40 and (double_bottom or inverse_hns or hammer):
+        
+        # if bos_detected and self.rsi[-2] > 25 and self.rsi[-2] < 45:
+
+        #     # print("BOS Signal Detected!")
+        #     # اختبر بشكل مستقل من دون FVG
+            stop_loss_price = close_price * (1 - self.stop_loss)
+            take_profit_price = close_price * (1 + self.profit_target)
+            self.buy(sl=stop_loss_price, tp=take_profit_price)
+            
+            
+        # fvg_zones = detect_fvg(self.data)
+        # bos_detected = self.data.BOS[-1]
+        
+        # # سجل تحقق الإشارات
+        # # print(f"FVG Zones: {fvg_zones}, BOS Detected: {bos_detected}")
+        
+        # if bos_detected and fvg_zones:
+        #     # print("Signal Detected! Checking conditions...")
+        #     zone = fvg_zones[-1]
+        #     close_price = self.data.Close[-1]
+
+        #     risk_percentage = 0.01
+        #     reward_percentage = 0.02
+
+        #     if close_price < zone['low'] and not self.position:
+        #         print("Opening Sell Position...")
+        #         stop_loss_price = close_price * (1 + risk_percentage)
+        #         take_profit_price = close_price * (1 - reward_percentage)
+        #         self.sell(sl=stop_loss_price, tp=take_profit_price)
+            
+        #     elif close_price > zone['high'] and not self.position:
+        #     # if close_price > zone['high'] and not self.position:
+            
+        #         print("Opening Buy Position...")
+        #         stop_loss_price = close_price * (1 - risk_percentage)
+        #         take_profit_price = close_price * (1 + reward_percentage)
+        #         self.buy(sl=stop_loss_price, tp=take_profit_price)
+
+# تحميل البيانات
+
+# data = load_data()
+
+# # إعداد Backtest مع البيانات والإستراتيجية
+# bt = Backtest(data, ICTStrategy, cash=10000000, commission=0.002)
+
+# # تشغيل الاختبار
+# results = bt.run()
+
+# # عرض النتائج
+# print(results)
+
+# رسم النتائج
+# bt.plot()
+
+def extract_stats(stats):
+    trades = stats['# Trades']  # عدد الصفقات
+    win_rate = stats['Win Rate [%]']  # نسبة الربح
+    best_trade = stats['Best Trade [%]']  # أفضل صفقة
+    worst_trade = stats['Worst Trade [%]']  # أسوأ صفقة
+    max_duration = stats['Max. Trade Duration']  
+    avg_duration = stats['Max. Trade Duration']  
+
+    return trades, win_rate, best_trade, worst_trade, max_duration, avg_duration
 
 
+
+result=[]
 # تحميل البيانات التاريخية (استخدام Binance أو بيانات جاهزة)
 def fetch_binance_data(symbol, interval, start_date, end_date):
     # from binance.client import Client
@@ -250,24 +332,13 @@ def fetch_binance_data(symbol, interval, start_date, end_date):
     }).set_index('Date')
 
 
-def extract_stats(stats):
-    trades = stats['# Trades']  # عدد الصفقات
-    win_rate = stats['Win Rate [%]']  # نسبة الربح
-    best_trade = stats['Best Trade [%]']  # أفضل صفقة
-    worst_trade = stats['Worst Trade [%]']  # أسوأ صفقة
-    max_duration = stats['Max. Trade Duration']  
-    avg_duration = stats['Max. Trade Duration']  
 
-    return trades, win_rate, best_trade, worst_trade, max_duration, avg_duration
-
-
-result=[]
 # تنفيذ الباكتيست
 if __name__ == "__main__":
     # استخدم بيانات Binance أو بيانات جاهزة
-    for symbol in get_top_symbols(200):
+    for symbol in get_top_symbols(count_top_symbols):
         # data = fetch_binance_data(symbol, Client.KLINE_INTERVAL_3MINUTE, "12 hours ago UTC", "6 hours ago UTC")
-        data = fetch_binance_data(symbol, klines_interval, "3 hours ago UTC", "6 hours ago UTC")
+        data = load_data(symbol, klines_interval, analize_period)
 
         # data = fetch_binance_data(symbol, Client.KLINE_INTERVAL_3MINUTE, "168 hours ago UTC", "30 Nov 2024")
 
@@ -279,7 +350,7 @@ if __name__ == "__main__":
         # تشغيل الباكتيست باستخدام Backtesting.py
         print(symbol)
         
-        bt = Backtest(data, RSIStrategy, cash=10000, commission=0.002)
+        bt = Backtest(data, ICTStrategy, cash=10000000, commission=0.002)
         stats = bt.run() 
         trades, win_rate, best_trade, worst_trade, max_duration, avg_duration= extract_stats(stats)
 
@@ -302,13 +373,4 @@ excel.loc[len(excel.index)] = ['Total', excel['Return'].sum(), excel['Trades'].s
 
 # excel.to_excel('result.xlsx')
 
-excel.to_csv('result.csv')
-
-
-# copy_excel= open('result.csv',)
-# # print(copy_excel.read())
-
-# excel = pd.DataFrame(pd.read_csv('result.csv'))
-# excel.columns = ["index",'Symbol', 'Return', 'Trades', 'Win Rate', 'Best Trade', 'Worst Trade','Max Duration','Avg Duration']
-# excel.loc[len(excel.index)] = ['','Total', excel['Return'].sum(), excel['Trades'].sum(), '', '', '','', '']
-# excel.to_csv('result.csv')
+excel.to_csv('ict_result.csv')
