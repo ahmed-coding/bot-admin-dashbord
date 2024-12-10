@@ -16,8 +16,8 @@ class SymbolView(viewsets.ModelViewSet):
                        filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['symbol', 'win_rate']
     ordering_fields = '__all__'
-    # queryset = models.Symbol.objects.filter(win_rate__gt=70).order_by('avg_duration')
-    queryset = models.Symbol.objects.all().order_by('avg_duration')
+    queryset = models.Symbol.objects.filter(win_rate__gt=50).order_by('avg_duration')
+    # queryset = models.Symbol.objects.all().order_by('-avg_duration')
 
 class FutuerSymbolView(viewsets.ModelViewSet):
     search_fields = 'symbol'
