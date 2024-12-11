@@ -7,6 +7,6 @@ class SettingsSerializers(serializers.ModelSerializer):
     # is_open = serializers.ReadOnlyField()
     class Meta:
         model= models.BotSettings
-        fields= '__all__'
+        fields= ('key','value','for_spot','for_futuer')
 
 
