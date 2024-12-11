@@ -29,4 +29,16 @@ class TradeAdmin(admin.ModelAdmin):
     date_hierarchy = 'created_time'
 
 
+
 admin.site.register(models.Trade, TradeAdmin)
+
+
+class BotSettingsAdmin(admin.ModelAdmin):
+    list_display = ('key', 'value')
+    search_fields = ['key', 'value']
+    list_filter = ['key', 'value']
+    # date_hierarchy = 'created_time'
+
+
+
+admin.site.register(models.BotSettings, BotSettingsAdmin)
