@@ -1,5 +1,5 @@
-import request_load
-from config import API_KEY, API_SECRET, FUTUER_API_TEST_KEY, FUTUER_API_TEST_SECRET
+import utils.request_load as request_load
+from utils.config import API_KEY, API_SECRET, FUTUER_API_TEST_KEY, FUTUER_API_TEST_SECRET
 from binance.client import Client
 
 

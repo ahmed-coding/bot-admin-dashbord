@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 # import  config 
 from binance.exceptions import BinanceAPIException
-from ict_bot import *
+from ICT.ict_bot import *
 import ta
 # استخدم دالة fetch_historical_data لتحميل البيانات
 # أو قم بتحميل بيانات جاهزة في صيغة DataFrame
@@ -703,4 +703,4 @@ excel.loc[len(excel.index)] = ['Total', excel['Return'].sum(), excel['Trades'].s
 
 # excel.to_excel('result.xlsx')
 
-excel.to_csv('result/ict_result.csv')
+excel.to_csv('result/pattern_result.csv')

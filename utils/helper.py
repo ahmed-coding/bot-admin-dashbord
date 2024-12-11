@@ -1,13 +1,13 @@
 
 # from backtest import calculate_rsi
-from config import *
+from utils.config import *
 from datetime import datetime
 import pandas as pd
 import ta
 import decimal
 from binance.client import Client
 from decimal import Decimal, ROUND_DOWN
-import request_load
+import utils.request_load as request_load
 
 start_date='3 hours ago UTC'
 analize_period=80

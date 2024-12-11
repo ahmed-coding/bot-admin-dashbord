@@ -9,15 +9,15 @@ import statistics
 from binance.exceptions import BinanceAPIException
 import threading
 import requests
-from config import API_KEY, API_SECRET, FUTUER_API_TEST_KEY, FUTUER_API_TEST_SECRET
-from helper import *
+from utils.config import API_KEY, API_SECRET, FUTUER_API_TEST_KEY, FUTUER_API_TEST_SECRET
+from utils.helper import *
 import numpy as np
 import pandas as pd
 import decimal
 import ta
-import request_load
+import utils.request_load as request_load
 
-import helper
+import utils.helper as helper
 
 
 
@@ -37,16 +37,16 @@ balance = helper.get_futuer_usdt_balance(client) # الرصيد المبدئي �
 # balance = 3# الرصيد المبدئي للبوت
 
 investment=0.5 # حجم كل صفقة
-base_profit_target=0.01 # نسبة الربح
+base_profit_target=0.008 # نسبة الربح
 # base_profit_target=0.005 # نسبة الربح
-base_stop_loss=0.03 # نسبة الخسارة
+base_stop_loss=0.02 # نسبة الخسارة
 # base_stop_loss=0.000 # نسبة الخسارة
 timeout=60 # وقت انتهاء وقت الصفقة
 commission_rate = 0.002 # نسبة العمولة للمنصة
-klines_interval=Client.KLINE_INTERVAL_15MINUTE
+klines_interval=Client.KLINE_INTERVAL_5MINUTE
 klines_limit=14
 count_top_symbols=200
-analize_period=50
+analize_period=80
 rsi_analize_period=8
 start_date= '3 hours ago UTC'
 # test_list =[
@@ -71,7 +71,7 @@ __active_symbol = {}
 _symbols = client.futures_exchange_info()['symbols']
 valid_symbols = [s['symbol'] for s in _symbols]
 
-MAX_POSITIONS = 2
+MAX_POSITIONS = 10
 
 
 
@@ -111,11 +111,11 @@ def open_futures_trade(symbol, investment, leverage):
     # # print(f"لا يجب شراء {symbol} في الوقت الحالي ")
     #     return
     
-    if not helper.pattern_should_open_trade(client=client, symbol=symbol, interval=klines_interval,limit=analize_period,rsi_period=rsi_analize_period):
+    if not helper.rsi_ict_should_open_futuer_trade(client=client, symbol=symbol, interval=klines_interval,limit=analize_period,rsi_period=rsi_analize_period):
     # print(f"لا يجب شراء {symbol} في الوقت الحالي ")
         return
     
-    # time.sleep(3)
+    time.sleep(3)
     try:
         # ضبط الرافعة المالية
         client.futures_change_leverage(symbol=symbol, leverage=leverage)
@@ -130,7 +130,7 @@ def open_futures_trade(symbol, investment, leverage):
         current_price = float(ticker['price'])
         # price = float(ticker['price'])
         # qty_precision = get_qty_precision(symbol)
-        # price_precision = get_price_precision(client,symbol)
+        price_precision = get_price_precision(client,symbol)
         # qty = round(leverage/price, qty_precision)
         
         # حساب الكمية بالدقة المناسبة
@@ -144,7 +144,7 @@ def open_futures_trade(symbol, investment, leverage):
         _stop_loss_price = current_price * (1 - base_stop_loss)
         # price_precision = helper.adjust_futuser_price_precision(client, symbol, current_price * (1 + base_profit_target))
         # target_price = round(_target_price, price_precision)
-        stop_loss_price = float(helper.Pric_Precision(client,_stop_loss_price, symbol))
+        stop_loss_price = round(_stop_loss_price, price_precision)
         target_price = float(helper.Pric_Precision(client, _target_price, symbol))
         # _target_price = current_price * (1 + base_profit_target)
         # _stop_loss_price = current_price * (1 - base_stop_loss)
@@ -221,13 +221,13 @@ def open_futures_trade(symbol, investment, leverage):
         # print(f"تم تحديد مستوى جني الأرباح عند {target_price}")
         print(f"تم تعيين وقف الخسارة عند {stop_loss_price}.")
 
-        client.futures_create_order(
-            symbol=symbol,
-            side="SELL",
-            type="STOP_MARKET",
-            stopPrice=stop_loss_price,
-            closePosition=True
-        )
+        # client.futures_create_order(
+        #     symbol=symbol,
+        #     side="SELL",
+        #     type="STOP_MARKET",
+        #     stopPrice=stop_loss_price,
+        #     closePosition=True
+        # )
         # client.futures_create_order(
         #     symbol=symbol,
         #     side="BUY",
