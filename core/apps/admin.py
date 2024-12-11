@@ -34,9 +34,9 @@ admin.site.register(models.Trade, TradeAdmin)
 
 
 class BotSettingsAdmin(admin.ModelAdmin):
-    list_display = ('key', 'value')
-    search_fields = ['key', 'value']
-    list_filter = ['key', 'value']
+    list_display = ('key','for_futuer','for_spot','value')
+    search_fields = ['key', 'description']
+    list_filter = ['for_futuer', 'for_spot']
     # date_hierarchy = 'created_time'
 
 

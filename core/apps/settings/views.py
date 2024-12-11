@@ -12,7 +12,7 @@ class BotSettingsView(viewsets.ModelViewSet):
     serializer_class = serializers.SettingsSerializers
     filter_backends = [DjangoFilterBackend,
                        filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['key', 'value']
+    filterset_fields = ['key', 'for_futuer','for_spot']
     ordering_fields = '__all__'
     queryset = models.BotSettings.objects.all()
 

@@ -424,6 +424,7 @@ def fetch_ris_binance_data(client, symbol, intervel , limit):
 
 
 
+
 def fetch_ict_ris_binance_data(client, symbol, interval, period=14, limit=500):
     """
     جلب بيانات RSI بناءً على أسعار الإغلاق.

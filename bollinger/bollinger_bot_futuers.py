@@ -37,7 +37,7 @@ active_trades = request_load.get_futuer_open_trad()
 balance = helper.get_futuer_usdt_balance(client) # الرصيد المبدئي للبوت
 # balance = 3# الرصيد المبدئي للبوت
 
-investment=0.5 # حجم كل صفقة
+investment = 0.5 # حجم كل صفقة
 base_profit_target=0.01 # نسبة الربح
 # base_profit_target=0.005 # نسبة الربح
 base_stop_loss=0.025 # نسبة الخسارة
