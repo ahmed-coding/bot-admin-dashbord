@@ -9,9 +9,9 @@ import ta
 # استخدم دالة fetch_historical_data لتحميل البيانات
 # أو قم بتحميل بيانات جاهزة في صيغة DataFrame
 
-klines_interval=Client.KLINE_INTERVAL_30MINUTE
+klines_interval=Client.KLINE_INTERVAL_15MINUTE
 count_top_symbols=200
-analize_period= 80
+analize_period= 50
 excluded_symbols = set()  # قائمة العملات المستثناة بسبب أخطاء متكررة
 klines_limit=20
 black_list=[
@@ -52,13 +52,13 @@ def detect_bos(data,is_sell=False):
     # data['BOS'] = (data['Close'] > data['High'].shift(1)) | (data['Close'] < data['Low'].shift(1))
     # data['BOS'] = ((data['Close'] > data['Close'].shift(1)) | (data['Close'] > data['High'].shift(1)))
     # if is_sell:
-    #     data['BOS'] = ((data['Close'] < data['Close'].shift(1)) & (data['Close'] < data['Low'].shift(1)))
+        # data['BOS'] = ((data['Close'] < data['Close'].shift(1)) & (data['Close'] < data['Low'].shift(1)))
     #     return data
     
-    data['BOS'] = ((data['Close'] < data['Close'].shift(1)) & (data['Close'] < data['Low'].shift(1)))
+    # data['BOS'] = ((data['Close'] < data['Close'].shift(1)) & (data['Close'] < data['Low'].shift(1)))
 
     
-    # data['BOS'] = ((data['Close'] > data['Close'].shift(1)) | (data['Close'] > data['High'].shift(1)))
+    data['BOS'] = ((data['Close'] > data['Close'].shift(1)) | (data['Close'] > data['High'].shift(1)))
     
     # data['BOS'] = ((data['Close'] > data['High'].shift(1)))
     # data['BOS'] = ((data['Close'] > data['High'].shift(1)))
@@ -543,22 +543,22 @@ class ICTStrategy(Strategy):
                 shooting_star or 
                 evening_star or 
                 inverted_hammer or 
-                large_top #or 
-                # big_move_down # or 
-                # bearish_breakout or 
-                # bearish_trend
+                large_top or 
+                big_move_down  or 
+                bearish_breakout or 
+                bearish_trend
                 ):
             
             if not self.position:
-                close_price = self.data.Close[-1]
-                stop_loss_price = close_price * (1 + self.stop_loss)
-                take_profit_price = close_price * (1 - self.profit_target)
-                self.sell(sl=stop_loss_price, tp=take_profit_price)
-                
                 # close_price = self.data.Close[-1]
-                # stop_loss_price = close_price * (1 - self.stop_loss)
-                # take_profit_price = close_price * (1 + self.profit_target)
-                # self.buy(sl=stop_loss_price, tp=take_profit_price)   
+                # stop_loss_price = close_price * (1 + self.stop_loss)
+                # take_profit_price = close_price * (1 - self.profit_target)
+                # self.sell(sl=stop_loss_price, tp=take_profit_price)
+                
+                close_price = self.data.Close[-1]
+                stop_loss_price = close_price * (1 - self.stop_loss)
+                take_profit_price = close_price * (1 + self.profit_target)
+                self.buy(sl=stop_loss_price, tp=take_profit_price)   
                 
             # bos_detected = self.data.BOS[-1]
             # double_bottom = detect_double_bottom(self.data)

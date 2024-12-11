@@ -492,7 +492,8 @@ def detect_bos(data, is_sell = False):
     #         data['BOS'] = ((data['Close'] < data['Close'].shift(1)) & (data['Close'] < data['Low'].shift(1)))
     #         return data['BOS'].iloc[-1]
         
-    data['BOS'] = ((data['Close'] > data['Close'].shift(1)) & (data['Close'] > data['High'].shift(1)))
+    # data['BOS'] = ((data['Close'] < data['Close'].shift(1)) & (data['Close'] < data['Low'].shift(1)))
+    data['BOS'] = ((data['Close'] > data['Close'].shift(1)) | (data['Close'] > data['High'].shift(1)))
 
     # data['BOS'] = ((data['Close'] > data['High'].shift(1)))
     # data['BOS'] = ((data['Close'] > data['High'].shift(1)))
@@ -976,8 +977,8 @@ def pattern_should_open_trade(client, symbol, interval, limit, rsi_period):
     inverted_hammer = detect_inverted_hammer(data)
     large_top = detect_large_top(data)
     big_move_down = detect_big_move_down(data)
-    # bearish_breakout = detect_bearish_breakout(data)
-    # bearish_trend = detect_bearish_trend(data)
+    bearish_breakout = detect_bearish_breakout(data)
+    bearish_trend = detect_bearish_trend(data)
     # if bos and (shooting_star or bearish_engulfing or evening_star or double_top or head_and_shoulders or inverted_hammer or large_top or big_move_down or bearish_breakout or bearish_trend):
     if bos and (
     # if (
@@ -987,10 +988,10 @@ def pattern_should_open_trade(client, symbol, interval, limit, rsi_period):
             shooting_star or 
             evening_star or 
             inverted_hammer or 
-            large_top #or 
-            # big_move_down  
-            # bearish_breakout or 
-            # bearish_trend
+            large_top or 
+            big_move_down  or
+            bearish_breakout or 
+            bearish_trend
             ):
         return True # إشارة بيع قوية 
         # stop_loss_price = close_price * (1 + stop_loss)
