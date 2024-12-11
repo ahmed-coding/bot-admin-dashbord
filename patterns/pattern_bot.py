@@ -18,9 +18,12 @@ import ta
 import utils.request_load as request_load
 
 import utils.helper as helper
+from utils.settings import BaseSettings
 
 
 
+
+settings= BaseSettings(for_futuer=True)
 client = Client(API_KEY,API_SECRET,requests_params={'timeout':90})
 # client.API_URL = 'https://testnet.binance.vision/api'
 # client = Client(FUTUER_API_TEST_KEY, FUTUER_API_TEST_SECRET, testnet=True, requests_params={'timeout':90})
@@ -36,17 +39,17 @@ active_trades = request_load.get_futuer_open_trad()
 balance = helper.get_futuer_usdt_balance(client) # الرصيد المبدئي للبوت
 # balance = 3# الرصيد المبدئي للبوت
 
-investment=0.5 # حجم كل صفقة
-base_profit_target=0.01 # نسبة الربح
+investment=settings.investment()  # حجم كل صفقة
+base_profit_target=settings.profit_target() # نسبة الربح
 # base_profit_target=0.005 # نسبة الربح
-base_stop_loss=0.03 # نسبة الخسارة
+base_stop_loss= settings.stop_loss()  # نسبة الخسارة
 # base_stop_loss=0.000 # نسبة الخسارة
 timeout=60 # وقت انتهاء وقت الصفقة
 commission_rate = 0.002 # نسبة العمولة للمنصة
-klines_interval=Client.KLINE_INTERVAL_15MINUTE
-klines_limit=14
-count_top_symbols=200
-analize_period=50
+klines_interval=settings.klines_interval() 
+klines_limit=settings.klines_limit() 
+count_top_symbols=settings.count_top_symbols() 
+analize_period=settings.klines_limit() 
 rsi_analize_period=8
 start_date= '3 hours ago UTC'
 # test_list =[
@@ -58,7 +61,7 @@ start_date= '3 hours ago UTC'
 #                     'BOMEUSDT',
 #                 ]
 
-leverage = 20   # ال80رافعة المالية
+leverage = settings.leverage()    # ال80رافعة المالية
 
 
 excluded_symbols =[]  # قائمة العملات المستثناة بسبب أخطاء متكررة
@@ -71,7 +74,7 @@ __active_symbol = {}
 _symbols = client.futures_exchange_info()['symbols']
 valid_symbols = [s['symbol'] for s in _symbols]
 
-MAX_POSITIONS = 2
+MAX_POSITIONS = settings.max_trad() 
 
 
 
@@ -96,6 +99,10 @@ def can_trade(symbol):
 
 def open_futures_trade(symbol, investment, leverage):
     global base_profit_target, base_stop_loss, active_trades, balance
+    
+    if not settings.can_trad():
+        # print("the trading is of can't open more trad")
+        return
     if get_open_positions_count(client) >= MAX_POSITIONS:
         return
     
@@ -499,6 +506,10 @@ def monitor_trades():
         check_trade_conditions()
         time.sleep(0.1)
 
+def update_settings(interval = 60):
+    while True:
+        settings.update()
+        time.sleep(interval)
 
 # load_open_trades_from_portfolio()
 
@@ -514,7 +525,8 @@ def run_bot():
     symbol_update_thread = threading.Thread(target=update_symbols_periodically, args=(600,))
     symbol_update_thread.start()
     # print(active_trades)
-
+    setting_update_threed = threading.Thread(target=update_settings, args=[30,])
+    setting_update_threed.start()
     # تشغيل خيوط تحديث الأسعار ومراقبة الصفقات
     price_thread = threading.Thread(target=update_prices)
     trade_thread = threading.Thread(target=monitor_trades)

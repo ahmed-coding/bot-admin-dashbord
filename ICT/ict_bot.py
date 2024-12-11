@@ -2,19 +2,13 @@ import pandas as pd
 import numpy as np
 from datetime import datetime
 from binance.client import Client  # للتعامل مع Binance API
-# from config import API_KEY, API_SECRET, FUTUER_API_TEST_KEY, FUTUER_API_TEST_SECRET
+from utils.config import API_KEY, API_SECRET, FUTUER_API_TEST_KEY, FUTUER_API_TEST_SECRET
 
 
 # تهيئة عميل Binance API
-api_key = 'of6qt1T1MpGvlgma1qxwFTLdrGNNVsMj0fKf8LZy1sMf3OqTrwHC7BCRIkgsSsda'
-api_secret = 'MZuALJiqyWMoQ0WkPE6tqWdToGLTHLsap5m95qhPIDtizy1FPD0TQBXNvyQBhgFf'
-
-
-# api_key = 'tweOjH1Keln44QaxLCr3naevRPgF3j3sYuOpaAg9B7nUT74MyURemvivEUcihfkt'
-# api_secret = 'XLlku378D8aZzYg9JjOTtUngA8Q73xBCyy7jGVbqRYSoEICsGBfWC0cIsRptLHxb'
 
 # تهيئة الاتصال ببايننس واستخدام Testnet
-client = Client(api_key, api_secret,requests_params={'timeout':90})
+client = Client(API_KEY, API_SECRET,requests_params={'timeout':90})
 # client = Client(API_KEY, API_SECRET)
 
 # تحميل بيانات الشموع (1m أو 5m)

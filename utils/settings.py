@@ -25,7 +25,11 @@ class BaseSettings:
         
         self.data = request.json()
         
-    
+    def update(self):
+        
+        request = requests.get(self.url, headers=self.headers)
+        
+        self.data = request.json()
     
     def api_key(self):
         

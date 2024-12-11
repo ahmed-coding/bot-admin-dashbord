@@ -18,29 +18,51 @@ import ta
 import utils.request_load as request_load
 
 import utils.helper as helper
-
+from utils.settings import BaseSettings
 
 
 client = Client(API_KEY,API_SECRET,requests_params={'timeout':90})
 # client.API_URL = 'https://testnet.binance.vision/api'
+
+settings= BaseSettings(for_spot=True)
+
+# current_prices = {}
+# active_trades = request_load.get_open_trad()
+# # إدارة المحفظة 0
+# balance = helper.get_usdt_balance(client) # الرصيد المبدئي للبوت
+# investment=6 # حجم كل صفقة
+# base_profit_target=0.01 # نسبة الربح
+# # base_profit_target=0.005 # نسبة الربح
+# base_stop_loss=0.02 # نسبة الخسارة
+# # base_stop_loss=0.000 # نسبة الخسارة
+# timeout=60 # وقت انتهاء وقت الصفقة
+# commission_rate = 0.002 # نسبة العمولة للمنصة
+# klines_interval=Client.KLINE_INTERVAL_5MINUTE
+# klines_limit=14
+# count_top_symbols=200
+# analize_period=80
+# start_date= '3 hours ago UTC'
+
 
 
 current_prices = {}
 active_trades = request_load.get_open_trad()
 # إدارة المحفظة 0
 balance = helper.get_usdt_balance(client) # الرصيد المبدئي للبوت
-investment=6 # حجم كل صفقة
-base_profit_target=0.01 # نسبة الربح
+investment=settings.investment() # حجم كل صفقة
+base_profit_target=settings.profit_target() # نسبة الربح
 # base_profit_target=0.005 # نسبة الربح
-base_stop_loss=0.02 # نسبة الخسارة
+base_stop_loss=settings.stop_loss() # نسبة الخسارة
 # base_stop_loss=0.000 # نسبة الخسارة
 timeout=60 # وقت انتهاء وقت الصفقة
 commission_rate = 0.002 # نسبة العمولة للمنصة
-klines_interval=Client.KLINE_INTERVAL_5MINUTE
-klines_limit=14
-count_top_symbols=200
-analize_period=80
+klines_interval=settings.klines_interval()
+klines_limit=settings.klines_limit()
+count_top_symbols=settings.count_top_symbols()
+analize_period=settings.klines_limit()
 start_date= '3 hours ago UTC'
+
+
 
 excluded_symbols = set()  # قائمة العملات المستثناة بسبب أخطاء متكررة
 symbols_to_trade =request_load.get_top_symbols(count_top_symbols ,excluded_symbols)
@@ -71,10 +93,9 @@ def open_trade_with_dynamic_target(symbol, investment=2.5, base_profit_target=0.
     global balance, commission_rate, active_trades
     if not is_active:
         return
-    # trading_status= bot_settings.trading_status()
-    # if trading_status =="0":
-    #     # print("the trading is of can't open more trad")
-    #     return
+    if not settings.can_trad():
+        # print("the trading is of can't open more trad")
+        return
     # Ensure sufficient balance before opening the trade
     if balance < investment:
         # print(f"{datetime.now()} - {symbol} -الرصيد الحالي غير كافٍ لفتح صفقة جديدة.")
@@ -289,8 +310,12 @@ def monitor_trades():
         time.sleep(0.1)
 
 
-# load_open_trades_from_portfolio()
 
+# load_open_trades_from_portfolio()
+def update_settings(interval = 60):
+    while True:
+        settings.update()
+        time.sleep(interval)
 
 # load_open_trades_from_portfolio()
 # بدء التحديث الدوري لقائمة العملات
@@ -302,7 +327,8 @@ def run_bot():
     symbol_update_thread = threading.Thread(target=update_symbols_periodically, args=(600,))
     symbol_update_thread.start()
     # print(active_trades)
-
+    setting_update_threed = threading.Thread(target=update_settings, args=[30,])
+    setting_update_threed.start()
     # تشغيل خيوط تحديث الأسعار ومراقبة الصفقات
     price_thread = threading.Thread(target=update_prices)
     trade_thread = threading.Thread(target=monitor_trades)
