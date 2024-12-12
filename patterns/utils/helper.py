@@ -928,7 +928,7 @@ def pattern_should_open_trade(client, symbol, interval, limit, rsi_period):
     """
     # جلب البيانات
     data = fetch_ict_data(client, symbol, interval, limit=limit)
-    data = data[:-1]
+    # data = data[:-2]
     
     # rsi = fetch_ict_ris_binance_data(client, symbol, interval, period=rsi_period, limit=limit)
     
@@ -966,7 +966,6 @@ def pattern_should_open_trade(client, symbol, interval, limit, rsi_period):
             hammer
         ):
         return True  # إشارة شراء قوية
-    
     
         # صفقات الشراء
 

@@ -9,22 +9,26 @@ import statistics
 from binance.exceptions import BinanceAPIException
 import threading
 import requests
-from utils.config import API_KEY, API_SECRET, FUTUER_API_TEST_KEY, FUTUER_API_TEST_SECRET
-from utils.helper import *
+# from utils.config import API_KEY, API_SECRET, FUTUER_API_TEST_KEY, FUTUER_API_TEST_SECRET
+# from utils.helper import *
 import numpy as np
 import pandas as pd
 import decimal
 import ta
-import utils.request_load as request_load
 
+import utils.request_load as request_load
 import utils.helper as helper
+
+import utils.config as config
+# import utils.config as config
+
 from utils.settings import BaseSettings
 
 
 
 
 settings= BaseSettings(for_futuer=True)
-client = Client(API_KEY,API_SECRET,requests_params={'timeout':90})
+client = Client(config.API_KEY,config.API_SECRET,requests_params={'timeout':90})
 # client.API_URL = 'https://testnet.binance.vision/api'
 # client = Client(FUTUER_API_TEST_KEY, FUTUER_API_TEST_SECRET, testnet=True, requests_params={'timeout':90})
 # client.API_URL = "https://testnet.binancefuture.com"
@@ -48,7 +52,7 @@ timeout=60 # وقت انتهاء وقت الصفقة
 commission_rate = 0.002 # نسبة العمولة للمنصة
 klines_interval=settings.klines_interval() 
 klines_limit=settings.klines_limit() 
-count_top_symbols=settings.count_top_symbols() 
+count_top_symbols=int(settings.count_top_symbols()) 
 analize_period=settings.klines_limit() 
 rsi_analize_period=8
 start_date= '3 hours ago UTC'
@@ -100,10 +104,10 @@ def can_trade(symbol):
 def open_futures_trade(symbol, investment, leverage):
     global base_profit_target, base_stop_loss, active_trades, balance
     
-    if not settings.can_trad():
-        # print("the trading is of can't open more trad")
-        return
-    if get_open_positions_count(client) >= MAX_POSITIONS:
+    # if not settings.can_trad():
+    #     # print("the trading is of can't open more trad")
+    #     return
+    if helper.get_open_positions_count(client) >= MAX_POSITIONS:
         return
     
     
@@ -282,7 +286,7 @@ def open_trade_with_dynamic_target(symbol, investment=2.5, base_profit_target=0.
         # print(f"{datetime.now()} - {symbol} -الرصيد الحالي غير كافٍ لفتح صفقة جديدة.")
         return
 
-    if not check_bnb_balance(client=client):
+    if not helper.check_bnb_balance(client=client):
         print(f"{datetime.now()} - الرصيد غير كافٍ من BNB لتغطية الرسوم. {symbol} يرجى إيداع BNB.")
         return
     
@@ -297,7 +301,7 @@ def open_trade_with_dynamic_target(symbol, investment=2.5, base_profit_target=0.
     # avg_volatility = statistics.stdev(closing_prices)
 
     # Ensure both strategies' conditions are met before opening a trade
-    if not should_open_trade(client=client, symbol=symbol):
+    if not helper.should_open_trade(client=client, symbol=symbol):
         # print(f"لا يجب شراء {symbol} في الوقت الحالي ")
         return
 
@@ -306,7 +310,7 @@ def open_trade_with_dynamic_target(symbol, investment=2.5, base_profit_target=0.
     stop_loss = base_stop_loss
     target_price = price * (1 + profit_target)
     stop_price = price * (1 - stop_loss)
-    quantity = adjust_quantity(client,symbol, (investment) / price)
+    quantity = helper.adjust_quantity(client,symbol, (investment) / price)
 
 
     try:
@@ -358,7 +362,7 @@ def sell_trade(symbol, trade_quantity):
         current_price = float(client.futures_symbol_ticker(symbol=symbol)['price'])
 
         # التأكد من أن الكمية تلبي الحد الأدنى لـ LOT_SIZE وتعديل الدقة المناسبة
-        step_size = get_lot_size(client,symbol)
+        step_size = helper.get_lot_size(client,symbol)
         if available_quantity < step_size:
             print(f"{symbol} - الكمية المتاحة للبيع ({available_quantity}) أقل من الحد الأدنى المطلوب لـ LOT_SIZE ({step_size}).")
             return 0
@@ -509,6 +513,7 @@ def monitor_trades():
 def update_settings(interval = 60):
     while True:
         settings.update()
+        # print("تم تحديث الاعدادات")
         time.sleep(interval)
 
 # load_open_trades_from_portfolio()
@@ -525,7 +530,7 @@ def run_bot():
     symbol_update_thread = threading.Thread(target=update_symbols_periodically, args=(600,))
     symbol_update_thread.start()
     # print(active_trades)
-    setting_update_threed = threading.Thread(target=update_settings, args=[30,])
+    setting_update_threed = threading.Thread(target=update_settings, args=[5,])
     setting_update_threed.start()
     # تشغيل خيوط تحديث الأسعار ومراقبة الصفقات
     price_thread = threading.Thread(target=update_prices)
@@ -537,7 +542,7 @@ def run_bot():
     
 if __name__ == "__main__":
     run_bot()
-    update_futuer_active_trades(client)
+    helper.update_futuer_active_trades(client)
     # print(get_open_positions_count(client))
             
             

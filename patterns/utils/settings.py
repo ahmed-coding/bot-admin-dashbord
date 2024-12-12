@@ -146,7 +146,7 @@ class BaseSettings:
         
         for item in self.data:
             if item['key'] == 'count_top_symbols':
-                return int(item['value'])
+                return item['value']
         return None
     
     
@@ -167,3 +167,8 @@ class BaseSettings:
         return None
     
 
+
+setting= BaseSettings(False,True)
+
+
+print(setting.profit_target())

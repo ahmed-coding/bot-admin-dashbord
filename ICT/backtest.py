@@ -477,88 +477,88 @@ class ICTStrategy(Strategy):
         
         
         
-        # bos_detected = self.data.BOS[-1]
-        # double_bottom = detect_double_bottom(self.data)
-        # inverse_hns = detect_inverse_head_and_shoulders(self.data)
-        # hammer= detect_hammer(self.data)
-        # bullish_engulfing = detect_bullish_engulfing(self.data)
-        # morning_star = detect_morning_star(self.data)
-        # piercing_line= detect_piercing_line(self.data)
-        # three_white_soldiers= detect_three_white_soldiers(self.data)
-        
-        # large_base = detect_large_base(self.data)
-        # big_move_up = detect_big_move_up(self.data)
-        # bullish_breakout = detect_bullish_breakout(self.data)
-        # # # if bos  and  (double_bottom or inverse_hns or hammer):
-        
-        # if bos_detected and (
-
-        # # if (
-        #         inverse_hns or 
-        #         double_bottom or 
-        #         three_white_soldiers or 
-        #         bullish_engulfing or 
-        #         morning_star  or 
-        #         large_base  or 
-        #         bullish_breakout or 
-        #         big_move_up  or 
-        #         piercing_line  or 
-        #         hammer
-        #     ):
-        # # if bos  and  (double_bottom or inverse_hns or hammer):
-        # # if self.rsi < 40 and (double_bottom or inverse_hns or hammer or bullish_engulfing or morning_star or piercing_line or three_white_soldiers):
-        #     if not self.position:
-        #         close_price = self.data.Close[-1]
-
-        #         stop_loss_price = close_price * (1 - self.stop_loss)
-        #         take_profit_price = close_price * (1 + self.profit_target)
-        #         self.buy(sl=stop_loss_price, tp=take_profit_price)     
-                
-                
-                # close_price = self.data.Close[-1]
-                # stop_loss_price = close_price * (1 + self.stop_loss)
-                # take_profit_price = close_price * (1 - self.profit_target)
-                # self.sell(sl=stop_loss_price, tp=take_profit_price)
-            
-        
-        
-        shooting_star = detect_shooting_star(self.data)
-        bearish_engulfing = detect_bearish_engulfing(self.data)
-        evening_star = detect_evening_star(self.data)
-        double_top = detect_double_top(self.data)
-        head_and_shoulders = detect_head_and_shoulders(self.data)
-        inverted_hammer = detect_inverted_hammer(self.data)
         bos_detected = self.data.BOS[-1]
-
-        large_top = detect_large_top(self.data)
-        big_move_down = detect_big_move_down(self.data)
-        bearish_breakout = detect_bearish_breakout(self.data)
-        bearish_trend = detect_bearish_trend(self.data)
-        # if bos and (shooting_star or bearish_engulfing or evening_star or double_top or head_and_shoulders or inverted_hammer or large_top or big_move_down or bearish_breakout or bearish_trend):
+        double_bottom = detect_double_bottom(self.data)
+        inverse_hns = detect_inverse_head_and_shoulders(self.data)
+        hammer= detect_hammer(self.data)
+        bullish_engulfing = detect_bullish_engulfing(self.data)
+        morning_star = detect_morning_star(self.data)
+        piercing_line= detect_piercing_line(self.data)
+        three_white_soldiers= detect_three_white_soldiers(self.data)
+        
+        large_base = detect_large_base(self.data)
+        big_move_up = detect_big_move_up(self.data)
+        bullish_breakout = detect_bullish_breakout(self.data)
+        # # if bos  and  (double_bottom or inverse_hns or hammer):
+        
         if bos_detected and (
-        # if  (
-                head_and_shoulders or 
-                double_top or 
-                bearish_engulfing or 
-                shooting_star or 
-                evening_star or 
-                inverted_hammer or 
-                large_top or 
-                big_move_down  or 
-                bearish_breakout or 
-                bearish_trend
-                ):
-            
+
+        # if (
+                inverse_hns or 
+                double_bottom or 
+                three_white_soldiers or 
+                bullish_engulfing or 
+                morning_star  or 
+                large_base  or 
+                bullish_breakout or 
+                big_move_up  or 
+                piercing_line  or 
+                hammer
+            ):
+        # if bos  and  (double_bottom or inverse_hns or hammer):
+        # if self.rsi < 40 and (double_bottom or inverse_hns or hammer or bullish_engulfing or morning_star or piercing_line or three_white_soldiers):
             if not self.position:
-                # close_price = self.data.Close[-1]
-                # stop_loss_price = close_price * (1 + self.stop_loss)
-                # take_profit_price = close_price * (1 - self.profit_target)
-                # self.sell(sl=stop_loss_price, tp=take_profit_price)
-                
                 close_price = self.data.Close[-1]
+
                 stop_loss_price = close_price * (1 - self.stop_loss)
                 take_profit_price = close_price * (1 + self.profit_target)
-                self.buy(sl=stop_loss_price, tp=take_profit_price)   
+                self.buy(sl=stop_loss_price, tp=take_profit_price)     
+                
+                
+                # close_price = self.data.Close[-1]
+                # stop_loss_price = close_price * (1 + self.stop_loss)
+                # take_profit_price = close_price * (1 - self.profit_target)
+                # self.sell(sl=stop_loss_price, tp=take_profit_price)
+            
+        
+        
+        # shooting_star = detect_shooting_star(self.data)
+        # bearish_engulfing = detect_bearish_engulfing(self.data)
+        # evening_star = detect_evening_star(self.data)
+        # double_top = detect_double_top(self.data)
+        # head_and_shoulders = detect_head_and_shoulders(self.data)
+        # inverted_hammer = detect_inverted_hammer(self.data)
+        # bos_detected = self.data.BOS[-1]
+
+        # large_top = detect_large_top(self.data)
+        # big_move_down = detect_big_move_down(self.data)
+        # bearish_breakout = detect_bearish_breakout(self.data)
+        # bearish_trend = detect_bearish_trend(self.data)
+        # # if bos and (shooting_star or bearish_engulfing or evening_star or double_top or head_and_shoulders or inverted_hammer or large_top or big_move_down or bearish_breakout or bearish_trend):
+        # if bos_detected and (
+        # # if  (
+        #         head_and_shoulders or 
+        #         double_top or 
+        #         bearish_engulfing or 
+        #         shooting_star or 
+        #         evening_star or 
+        #         inverted_hammer or 
+        #         large_top or 
+        #         big_move_down  or 
+        #         bearish_breakout or 
+        #         bearish_trend
+        #         ):
+            
+        #     if not self.position:
+        #         # close_price = self.data.Close[-1]
+        #         # stop_loss_price = close_price * (1 + self.stop_loss)
+        #         # take_profit_price = close_price * (1 - self.profit_target)
+        #         # self.sell(sl=stop_loss_price, tp=take_profit_price)
+                
+        #         close_price = self.data.Close[-1]
+        #         stop_loss_price = close_price * (1 - self.stop_loss)
+        #         take_profit_price = close_price * (1 + self.profit_target)
+        #         self.buy(sl=stop_loss_price, tp=take_profit_price)   
                 
             # bos_detected = self.data.BOS[-1]
             # double_bottom = detect_double_bottom(self.data)
