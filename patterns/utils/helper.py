@@ -506,26 +506,30 @@ def should_open_futuer_rsi_trade(client,symbol,intervel, limit,rsi_limit):
 
 
 
-def detect_bos(data, is_sell = False):
+def detect_bos(data, is_sell=False):
     """
     اكتشاف كسر الهيكل (BOS) في بيانات Pandas.
+    
+    Parameters:
+        data (pd.DataFrame): البيانات التي تحتوي على الأعمدة Open, High, Low, Close.
+        is_sell (bool): إذا كان True يتم فحص كسر الهيكل للبيع، إذا كان False يتم فحص كسر الهيكل للشراء.
+    
+    Returns:
+        bool: True إذا كان هناك كسر هيكل بناءً على الاتجاه المحدد، False إذا لم يكن هناك كسر.
     """
-    # data['BOS'] = (data['Close'] > data['High'].shift(1)) | (data['Close'] < data['Low'].shift(1))
-    # data['BOS'] = (data['Close'] > data['High'].shift(1)) | (data['Close'] < data['Low'].shift(1))
-    # data['BOS'] = ((data['Close'] > data['Close'].shift(1)) | (data['Close'] > data['High'].shift(1)))
+    if len(data) < 2:
+        print("⚠️ البيانات غير كافية لتحليل BOS")
+        return False  # لا توجد بيانات كافية
+    
     if is_sell:
-            data['BOS'] = ((data['Close'] < data['Close'].shift(1)) & (data['Close'] < data['Low'].shift(1)))
-            return data['BOS'].iloc[-1]
-        
-    # data['BOS'] = ((data['Close'] < data['Close'].shift(1)) & (data['Close'] < data['Low'].shift(1)))
-    data['BOS'] = ((data['Close'] > data['Close'].shift(1)) | (data['Close'] > data['High'].shift(1)))
-
-    # data['BOS'] = ((data['Close'] > data['High'].shift(1)))
-    # data['BOS'] = ((data['Close'] > data['High'].shift(1)))
-    # data['BOS'] = (data['Close'] > data['Close'].shift(1) | (data['Close'] < data['Low'].shift(1)))
-
-    return data['BOS'].iloc[-1]  # استخدام آخر قيمة BOS
-
+        # كسر هيكل هبوطي: الإغلاق أقل من القاع السابق، والإغلاق أقل من الإغلاق السابق
+        data['BOS'] = (data['Close'] < data['Low'].shift(1)) & (data['Close'] < data['Close'].shift(1))
+    else:
+        # كسر هيكل صعودي: الإغلاق أعلى من القمة السابقة، والإغلاق أعلى من الإغلاق السابق
+        data['BOS'] = (data['Close'] > data['High'].shift(1)) & (data['Close'] > data['Close'].shift(1))
+    
+    # إرجاع النتيجة لأحدث صف فقط
+    return data['BOS'].iloc[-1]
 
 
 def fetch_ict_data(client,symbol, interval, limit=500):
@@ -1048,7 +1052,9 @@ def pattern_should_open_trade(client, symbol, interval, limit, rsi_period):
     """
     # جلب البيانات
     data = fetch_ict_data(client, symbol, interval, limit=limit)
+    bos_data = data
     data = data[:-1]
+    
     
     # rsi = fetch_ict_ris_binance_data(client, symbol, interval, period=rsi_period, limit=limit)
     
@@ -1062,11 +1068,11 @@ def pattern_should_open_trade(client, symbol, interval, limit, rsi_period):
     side = ""
     
     
-    bos_sell = detect_bos(data, is_sell=True)
+    bos_sell = detect_bos(bos_data, is_sell=True)
     shooting_star = detect_shooting_star(data)
     bearish_engulfing = detect_bearish_engulfing(data)
     evening_star = detect_evening_star(data)
-    
+    triple_top =  detect_triple_top(data)  # تبديل النمط من بيع الى شراء 
     head_and_shoulders = detect_head_and_shoulders(data) # checkd
     inverted_hammer = detect_inverted_hammer(data)
     large_top = detect_large_top(data) # checkd ملغي
@@ -1076,17 +1082,17 @@ def pattern_should_open_trade(client, symbol, interval, limit, rsi_period):
     
     bearish_flag = detect_bearish_flag(data) 
     # if bos and (shooting_star or bearish_engulfing or evening_star or double_top or head_and_shoulders or inverted_hammer or large_top or big_move_down or bearish_breakout or bearish_trend):
-    # if bos_sell and (
-    if  (
+    if bos_sell and (
+    # if  (
                 head_and_shoulders or   # 95% - نمط قوي جدًا يشير إلى انعكاس الاتجاه إلى الهبوط
                 # double_top #or          # 90% - نمط قوي لانعكاس هبوطي بعد قمتين
-                # triple_top #or          # 85% - نمط ثلاث قمم يشير إلى انعكاس هبوطي قوي
+                triple_top or          # 85% - نمط ثلاث قمم يشير إلى انعكاس هبوطي قوي
                 bearish_engulfing or   # 80% - نمط ابتلاعي هبوطي موثوق
                 # shooting_star or       # 75% - نمط شمعة يشير إلى انعكاس الاتجاه للأسفل
-                bearish_flag  or       # 70% - نمط يشير إلى استمرارية الاتجاه الهبوطي
+                bearish_flag  #or       # 70% - نمط يشير إلى استمرارية الاتجاه الهبوطي
                 ## evening_star #or        # 65% - نمط انعكاسي يشير إلى بداية اتجاه هبوطي
                 # large_top  #or           # 60% - نمط قمة كبيرة يشير إلى احتمال الهبوط
-                inverted_hammer #or     # 55% - نمط شمعة انعكاسي متوسط القوة
+                # inverted_hammer #or     # 55% - نمط شمعة انعكاسي متوسط القوة
                 # big_move_down #or       # 50% - حركة هبوط كبيرة ولكن قد تكون مؤقتة
                 # bearish_breakout# or    # 50% - كسر هبوطي ولكن يحتاج إلى تأكيد
                 # bearish_trend          # 50% - استمرار الاتجاه الهبوطي ولكن يعتمد على الظروف
@@ -1098,7 +1104,7 @@ def pattern_should_open_trade(client, symbol, interval, limit, rsi_period):
     
     # صفقات الشراء
     
-    bos_buy = detect_bos(data)
+    bos_buy = detect_bos(bos_data)
     double_bottom = detect_double_bottom(data) #checkd
     inverse_hns = detect_inverse_head_and_shoulders(data) # checkd
     # hammer= detect_hammer(data)
@@ -1116,14 +1122,14 @@ def pattern_should_open_trade(client, symbol, interval, limit, rsi_period):
     bullish_flag = detect_bullish_flag(data) # checkd
     # # if bos  and  (double_bottom or inverse_hns or hammer):
     
-    # if bos_buy and (
-    if (
+    if bos_buy and (
+    # if (
 
                 three_white_soldiers or  # 95% - نمط قوي جدًا وموثوق في الاتجاه الصاعد
                 double_bottom or         # 90% - نمط قوي ويشير إلى انعكاس صعودي
-                # double_top or
-                inverse_hns or           # 85% - نمط قوي ومؤشر لانعكاس الاتجاه إلى صعود
-                triple_top 
+                double_top or
+                inverse_hns #or           # 85% - نمط قوي ومؤشر لانعكاس الاتجاه إلى صعود
+                # triple_top 
                 
                 
                 # bullish_engulfing  or     # 80% - نمط موثوق يشير إلى صعود

@@ -133,7 +133,7 @@ def open_futures_trade(symbol, investment, leverage):
         
         return
     
-    # time.sleep(3)
+    time.sleep(3)
     base_profit_target=settings.profit_target() # نسبة الربح
     base_stop_loss= settings.stop_loss()  
     try:

@@ -3,6 +3,8 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 
+from . import settings
+from . import utils
 # تحميل البيانات
 data = pd.read_csv('your_data.csv')
 
