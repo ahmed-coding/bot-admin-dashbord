@@ -489,9 +489,9 @@ def detect_bos(data, is_sell = False):
     # data['BOS'] = (data['Close'] > data['High'].shift(1)) | (data['Close'] < data['Low'].shift(1))
     # data['BOS'] = (data['Close'] > data['High'].shift(1)) | (data['Close'] < data['Low'].shift(1))
     # data['BOS'] = ((data['Close'] > data['Close'].shift(1)) | (data['Close'] > data['High'].shift(1)))
-    # if is_sell:
-    #         data['BOS'] = ((data['Close'] < data['Close'].shift(1)) & (data['Close'] < data['Low'].shift(1)))
-    #         return data['BOS'].iloc[-1]
+    if is_sell:
+            data['BOS'] = ((data['Close'] < data['Close'].shift(1)) & (data['Close'] < data['Low'].shift(1)))
+            return data['BOS'].iloc[-1]
         
     # data['BOS'] = ((data['Close'] < data['Close'].shift(1)) & (data['Close'] < data['Low'].shift(1)))
     data['BOS'] = ((data['Close'] > data['Close'].shift(1)) | (data['Close'] > data['High'].shift(1)))
@@ -651,10 +651,11 @@ def detect_hammer(data):
     upper_shadow = high_price - max(open_price, close_price)
 
     return (
-        body < (high_price - low_price) * 0.3 and
-        lower_shadow > body * 2 and
-        upper_shadow < body * 0.3
+        body < (high_price - low_price) * 0.25 and
+        lower_shadow > body * 3 and
+        upper_shadow < body * 0.1
     )
+
 
 
 def detect_bullish_engulfing(data):
@@ -765,6 +766,35 @@ def detect_bullish_breakout(data):
     )
 
 
+def detect_cup_and_handle(data):
+    """
+    كشف نمط الكوب والعروة.
+    """
+    if len(data) < 15:  # التحقق من بيانات كافية
+        return False
+    
+    highs = data['High']
+    lows = data['Low']
+    # تحقق من شكل الكوب والعروة
+    return (
+        highs.iloc[-10:].max() == highs.iloc[-15] and  # الكوب
+        lows.iloc[-10:].min() < lows.iloc[-15] and      # القاع
+        highs.iloc[-1] > highs.iloc[-15]               # اختراق العروة
+    )
+
+def detect_bullish_flag(data):
+    """
+    كشف نمط العلم الصاعد.
+    """
+    if len(data) < 10:  # التحقق من بيانات كافية
+        return False
+    
+    highs = data['High']
+    lows = data['Low']
+    return (
+        highs.iloc[-5:].mean() < highs.iloc[-10:].mean() and  # التصحيح
+        highs.iloc[-1] > highs.iloc[-10:].max()              # الاختراق
+    )
 
 
 
@@ -822,12 +852,19 @@ def detect_head_and_shoulders(data):
     """
     كشف نمط الرأس والكتفين (Head and Shoulders)
     """
+    
+    if len(data) < 7:  # التحقق من بيانات كافية
+        return False
+
     highs = data['High']
+    lows = data['Low']  # تعريف القيعان
+
+    neckline = lows.iloc[-3:].mean()  # خط العنق
     return (
         highs.iloc[-4] < highs.iloc[-3] and  # الكتف الأول
         highs.iloc[-3] > highs.iloc[-2] and  # الرأس
         highs.iloc[-2] < highs.iloc[-3] and  # الكتف الثاني
-        highs.iloc[-1] < highs.iloc[-2]      # تأكيد الكسر
+        lows.iloc[-1] < neckline  # كسر خط العنق
     )
 
 
@@ -915,6 +952,32 @@ def detect_bearish_trend(data):
         close_2 < data['Open'].iloc[-1]  # سعر الإغلاق أقل من سعر الافتتاح
     )
 
+def detect_bearish_flag(data):
+    """
+    كشف نمط العلم الهابط.
+    """
+    if len(data) < 10:  # التحقق من بيانات كافية
+        return False
+    
+    highs = data['High']
+    lows = data['Low']
+    return (
+        lows.iloc[-5:].mean() > lows.iloc[-10:].mean() and  # التصحيح
+        lows.iloc[-1] < lows.iloc[-10:].min()              # الكسر
+    )
+
+
+def detect_triple_top(data):
+    """
+    كشف نمط القمة الثلاثية.
+    """
+    highs = data['High']
+    return (
+        highs.iloc[-6] == highs.iloc[-4] and
+        highs.iloc[-4] == highs.iloc[-2] and
+        highs.iloc[-1] < highs.iloc[-2]  # انخفاض بعد القمم الثلاثة
+    )
+
 
 
 # ---------------------------------------------------
@@ -928,7 +991,7 @@ def pattern_should_open_trade(client, symbol, interval, limit, rsi_period):
     """
     # جلب البيانات
     data = fetch_ict_data(client, symbol, interval, limit=limit)
-    # data = data[:-2]
+    # data = data[:-1]
     
     # rsi = fetch_ict_ris_binance_data(client, symbol, interval, period=rsi_period, limit=limit)
     
@@ -937,10 +1000,48 @@ def pattern_should_open_trade(client, symbol, interval, limit, rsi_period):
     # #     return False
 
     # # التحقق من الشروط
+    is_buy = False
+    is_sell = False
+    side = ""
+    
+    
+    bos_sell = detect_bos(data, is_sell=True)
+    shooting_star = detect_shooting_star(data)
+    bearish_engulfing = detect_bearish_engulfing(data)
+    evening_star = detect_evening_star(data)
+    double_top = detect_double_top(data)
+    head_and_shoulders = detect_head_and_shoulders(data)
+    inverted_hammer = detect_inverted_hammer(data)
+    large_top = detect_large_top(data)
+    big_move_down = detect_big_move_down(data)
+    bearish_breakout = detect_bearish_breakout(data)
+    bearish_trend = detect_bearish_trend(data)
+    triple_top =  detect_triple_top(data)
+    bearish_flag = detect_bearish_flag(data)
+    # if bos and (shooting_star or bearish_engulfing or evening_star or double_top or head_and_shoulders or inverted_hammer or large_top or big_move_down or bearish_breakout or bearish_trend):
+    # if bos_sell and (
+    if  (
+                head_and_shoulders or  # 95% - نمط قوي جدًا يشير إلى انعكاس الاتجاه إلى الهبوط
+                double_top or          # 90% - نمط قوي لانعكاس هبوطي بعد قمتين
+                triple_top or          # 85% - نمط ثلاث قمم يشير إلى انعكاس هبوطي قوي
+                bearish_engulfing or   # 80% - نمط ابتلاعي هبوطي موثوق
+                shooting_star or       # 75% - نمط شمعة يشير إلى انعكاس الاتجاه للأسفل
+                bearish_flag  or        # 70% - نمط يشير إلى استمرارية الاتجاه الهبوطي
+                evening_star or        # 65% - نمط انعكاسي يشير إلى بداية اتجاه هبوطي
+                large_top  or           # 60% - نمط قمة كبيرة يشير إلى احتمال الهبوط
+                inverted_hammer or     # 55% - نمط شمعة انعكاسي متوسط القوة
+                big_move_down or       # 50% - حركة هبوط كبيرة ولكن قد تكون مؤقتة
+                bearish_breakout or    # 50% - كسر هبوطي ولكن يحتاج إلى تأكيد
+                bearish_trend          # 50% - استمرار الاتجاه الهبوطي ولكن يعتمد على الظروف
+            ):
+        is_sell = True  # إشارة بيع قوية
+        side = "sell"
+
+    
     
     # صفقات البيع
     
-    bos = detect_bos(data)
+    bos_buy = detect_bos(data)
     double_bottom = detect_double_bottom(data)
     inverse_hns = detect_inverse_head_and_shoulders(data)
     hammer= detect_hammer(data)
@@ -951,51 +1052,67 @@ def pattern_should_open_trade(client, symbol, interval, limit, rsi_period):
     large_base = detect_large_base(data)
     big_move_up = detect_big_move_up(data)
     bullish_breakout = detect_bullish_breakout(data)
+    cup_and_handle = detect_cup_and_handle(data) 
+    bullish_flag = detect_bullish_flag(data)
     # # if bos  and  (double_bottom or inverse_hns or hammer):
     
-    if bos and (
-            inverse_hns or 
-            double_bottom or 
-            three_white_soldiers or 
-            bullish_engulfing or 
-            morning_star or 
-            large_base or 
-            bullish_breakout or 
-            big_move_up or 
-            piercing_line or 
-            hammer
-        ):
-        return True  # إشارة شراء قوية
+    # if bos_buy and (
+    if (
+
+                three_white_soldiers or  # 95% - نمط قوي جدًا وموثوق في الاتجاه الصاعد
+                double_bottom or         # 90% - نمط قوي ويشير إلى انعكاس صعودي
+                inverse_hns or           # 85% - نمط قوي ومؤشر لانعكاس الاتجاه إلى صعود
+                bullish_engulfing  or     # 80% - نمط موثوق يشير إلى صعود
+                morning_star  or          # 75% - نمط إيجابي يشير إلى بداية اتجاه صاعد
+                bullish_flag or          # 70% - نمط يشير إلى استمرارية الاتجاه الصاعد
+                large_base  or            # 65% - يشير إلى تكوين قاعدة قوية لدعم الصعود
+                big_move_up or           # 60% - يشير إلى حركة صاعدة كبيرة ولكنها أقل دقة
+                piercing_line or         # 55% - نمط متوسط القوة يشير إلى انعكاس محتمل
+                hammer or                # 50% - نمط انعكاسي صاعد ولكنه ضعيف نسبيًا
+                cup_and_handle           # 50% - نمط انعكاسي ولكنه يتطلب تأكيدًا إضافيًا
+            ):
+        is_buy = True  # إشارة شراء قوية
+        side = "buy"
     
         # صفقات الشراء
 
-    # bos = detect_bos(data, is_sell=True)
-    # shooting_star = detect_shooting_star(data)
-    # bearish_engulfing = detect_bearish_engulfing(data)
-    # evening_star = detect_evening_star(data)
-    # double_top = detect_double_top(data)
-    # head_and_shoulders = detect_head_and_shoulders(data)
-    # inverted_hammer = detect_inverted_hammer(data)
-    # large_top = detect_large_top(data)
-    # big_move_down = detect_big_move_down(data)
-    # bearish_breakout = detect_bearish_breakout(data)
-    # bearish_trend = detect_bearish_trend(data)
-    # # if bos and (shooting_star or bearish_engulfing or evening_star or double_top or head_and_shoulders or inverted_hammer or large_top or big_move_down or bearish_breakout or bearish_trend):
-    # if bos and (
-    # # if (
-    #         head_and_shoulders or 
-    #         double_top or 
-    #         bearish_engulfing or 
-    #         shooting_star or 
-    #         evening_star or 
-    #         inverted_hammer or 
-    #         large_top or 
-    #         big_move_down  or
-    #         bearish_breakout or 
-    #         bearish_trend
-    #         ):
-    #     return True # إشارة بيع قوية 
+
         # stop_loss_price = close_price * (1 + stop_loss)
         # take_profit_price = close_price * (1 - profit_target)
-    return False
+        
+        
+    if is_buy and is_sell:
+        print(f"⚠️ تم إيجاد تضارب في عملة {symbol}")
+        return False, " "
+
+    # تحديد الإشارة النهائية
+    if is_sell:
+        print(f"📉 إشارة بيع على {symbol}")
+        return True, "sell"
+
+    if is_buy:
+        print(f"📈 إشارة شراء على {symbol}")
+        return True, "buy"
+
+
+    # إذا لم تتحقق أي إشارة
+    # print(f"❌ لا توجد إشارات صالحة على {symbol}")
+    return False, " "
+    
+    #     else:
+    #         print(f"لم يتم إيجاد تضارب في عملة {symbol}")
+    #         print(is_buy)
+    #         print(is_sell)
+    #         print(side)
+    #         # if is_buy:
+    #         #     # print("لم يتم إيجاد تضارب")
+    #         #     # print(is_buy)
+    #         #     return True, side
+            
+    #         # if is_sell:
+    #         #     return True
+    #         return True, side
+
+        
+    # return False, side
 

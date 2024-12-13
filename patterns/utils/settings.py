@@ -166,9 +166,3 @@ class BaseSettings:
                 return item['value']
         return None
     
-
-
-setting= BaseSettings(False,True)
-
-
-print(setting.profit_target())

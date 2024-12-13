@@ -121,9 +121,12 @@ def open_futures_trade(symbol, investment, leverage):
     # if not helper.should_open_futuer_rsi_trade(client=client, symbol=symbol, intervel=klines_interval,limit=analize_period,rsi_limit=rsi_analize_period):
     # # print(f"لا يجب شراء {symbol} في الوقت الحالي ")
     #     return
-    
-    if not helper.pattern_should_open_trade(client=client, symbol=symbol, interval=klines_interval,limit=analize_period,rsi_period=rsi_analize_period):
+    confirm, side =  helper.pattern_should_open_trade(client=client, symbol=symbol, interval=klines_interval,limit=analize_period,rsi_period=rsi_analize_period)
+
+    # if not helper.pattern_should_open_trade(client=client, symbol=symbol, interval=klines_interval,limit=analize_period,rsi_period=rsi_analize_period):
     # print(f"لا يجب شراء {symbol} في الوقت الحالي ")
+    if not confirm:
+        
         return
     
     # time.sleep(3)
@@ -138,133 +141,157 @@ def open_futures_trade(symbol, investment, leverage):
             excluded_symbols.append(symbol)
             return
         
-        current_price = float(ticker['price'])
-        # price = float(ticker['price'])
-        # qty_precision = get_qty_precision(symbol)
-        # price_precision = get_price_precision(client,symbol)
-        # qty = round(leverage/price, qty_precision)
-        
-        # حساب الكمية بالدقة المناسبة
-        _quantity = (investment / current_price) * leverage
-        # quantity_precision = helper.get_qty_precision(client, symbol,)
-        # quantity = round(_quantity, quantity_precision)
-        # quantity = helper.adjust_futuer_quantity(client, symbol,((investment * leverage )/ current_price))
-        quantity = helper.QUN_Precision(client,((investment * leverage )/ current_price),symbol,)
-        
-        _target_price = current_price * (1 + base_profit_target)
-        _stop_loss_price = current_price * (1 - base_stop_loss)
-        # price_precision = helper.adjust_futuser_price_precision(client, symbol, current_price * (1 + base_profit_target))
-        # target_price = round(_target_price, price_precision)
-        stop_loss_price = float(helper.Pric_Precision(client,_stop_loss_price, symbol))
-        target_price = float(helper.Pric_Precision(client, _target_price, symbol))
-        # _target_price = current_price * (1 + base_profit_target)
-        # _stop_loss_price = current_price * (1 - base_stop_loss)
-        # price_precision = helper.adjust_futuser_price_precision(client, symbol, current_price * (1 + base_profit_target))
-        # target_price = helper.adjust_futuser_price_precision(client, symbol, current_price * (1 + base_profit_target))
-        # stop_loss_price = helper.adjust_futuser_price_precision(client, symbol, current_price * (1 - base_profit_target))
-        
-        payload = {
-            "symbol": symbol,
-            "quantity": quantity,
-            "initial_price": current_price,
-            "target_price": target_price,
-            'stop_price': stop_loss_price,
-            'start_time':str(datetime.fromtimestamp(time.time())),
-            "timeout": timeout * 60,
-            "investment": investment,
-            "is_futuer": True
+        if side =="sell":
+            
+            current_price = float(ticker['price'])
+            
+            # حساب الكمية بالدقة المناسبة
+            _quantity = (investment / current_price) * leverage
+            quantity = helper.QUN_Precision(client,((investment * leverage )/ current_price),symbol,)
+            
+            _target_price = current_price * (1 - base_profit_target)
+            _stop_loss_price = current_price * (1 + base_stop_loss)
+
+            stop_loss_price = float(helper.Pric_Precision(client,_stop_loss_price, symbol))
+            target_price = float(helper.Pric_Precision(client, _target_price, symbol))
+            payload = {
+                "symbol": symbol,
+                "quantity": quantity,
+                "initial_price": current_price,
+                "target_price": target_price,
+                'stop_price': stop_loss_price,
+                'start_time':str(datetime.fromtimestamp(time.time())),
+                "timeout": timeout * 60,
+                "investment": investment,
+                "is_futuer": True
+            }
+            __active_symbol[symbol] = payload
+
+            
+
+                    # تنفيذ أمر بيع بالسوق
+            order = client.futures_create_order(
+                symbol=symbol,
+                side='SELL',
+                type='MARKET',
+                quantity=quantity
+            )
+            helper.update_futuer_active_trades(client)
+
+            order_response= request_load.create_trad(payload)
+            active_trades = request_load.get_futuer_open_trad()
+
+            # حساب سعر جني الأرباح
+            
+            client.futures_create_order(
+                symbol=symbol,
+                side='BUY',
+                type='TAKE_PROFIT_MARKET',
+                stopPrice=target_price,
+                closePosition=True
+            )
+            print(f"تم فتح صفقة بيع {symbol} بنجاح!")
+            print(f"تم تحديد مستوى جني الأرباح عند {target_price}")
+            # print(f"تم تحديد مستوى جني الأرباح عند {target_price}")
+            print(f"تم تعيين وقف الخسارة عند {stop_loss_price}.")
+
+            client.futures_create_order(
+                symbol=symbol,
+                side="BUY",
+                type="STOP_MARKET",
+                stopPrice=stop_loss_price,
+                closePosition=True
+            )
+            print(f"تم تعيين وقف الخسارة عند {stop_loss_price}.")
+            # تسجيل البيانات في حال أردت المتابعة لاحقًا
+            payload = {
+                "symbol": symbol,
+                "quantity": quantity,
+                "initial_price": current_price,
+                "target_price": target_price,
+                'stop_price': stop_loss_price,
+                'start_time':str(datetime.fromtimestamp(time.time())),
+                "timeout": timeout * 60,
+                "investment": investment,
+                "is_futuer": True
         }
-        __active_symbol[symbol] = payload
+        if side =="buy":
+            current_price = float(ticker['price'])
+            # حساب الكمية بالدقة المناسبة
+            _quantity = (investment / current_price) * leverage
+            quantity = helper.QUN_Precision(client,((investment * leverage )/ current_price),symbol,)
+            
+            _target_price = current_price * (1 + base_profit_target)
+            _stop_loss_price = current_price * (1 - base_stop_loss)
+            stop_loss_price = float(helper.Pric_Precision(client,_stop_loss_price, symbol))
+            target_price = float(helper.Pric_Precision(client, _target_price, symbol))
+            payload = {
+                "symbol": symbol,
+                "quantity": quantity,
+                "initial_price": current_price,
+                "target_price": target_price,
+                'stop_price': stop_loss_price,
+                'start_time':str(datetime.fromtimestamp(time.time())),
+                "timeout": timeout * 60,
+                "investment": investment,
+                "is_futuer": True
+            }
+            __active_symbol[symbol] = payload
 
-        
-        #         # تنفيذ أمر شراء بالسوق
-        order = client.futures_create_order(
-            symbol=symbol,
-            side='BUY',
-            type='MARKET',
-            quantity=quantity
-        )
-                # تنفيذ أمر شراء بالسوق
-        # order = client.futures_create_order(
-        #     symbol=symbol,
-        #     side='SELL',
-        #     type='MARKET',
-        #     quantity=quantity
-        # )
-        helper.update_futuer_active_trades(client)
+            
+            #         # تنفيذ أمر شراء بالسوق
+            order = client.futures_create_order(
+                symbol=symbol,
+                side='BUY',
+                type='MARKET',
+                quantity=quantity
+            )
+                    # تنفيذ أمر شراء بالسوق
+                    
+            helper.update_futuer_active_trades(client)
 
-        order_response= request_load.create_trad(payload)
-        active_trades = request_load.get_futuer_open_trad()
+            order_response= request_load.create_trad(payload)
+            active_trades = request_load.get_futuer_open_trad()
+            
+            # إعداد أمر جني الأرباح
+            client.futures_create_order(
+                symbol=symbol,
+                side='SELL',
+                type='TAKE_PROFIT_MARKET',
+                stopPrice=target_price,
+                closePosition=True
+            )
+            print(f"تم فتح صفقة شراء {symbol} بنجاح!")
+            print(f"تم تحديد مستوى جني الأرباح عند {target_price}")
+            # print(f"تم تحديد مستوى جني الأرباح عند {target_price}")
+            print(f"تم تعيين وقف الخسارة عند {stop_loss_price}.")
 
-        # حساب سعر جني الأرباح
-        # target_price = adjust_futuser_price_precision(client, symbol, current_price * (1 + base_profit_target))
-        # stop_loss_price = adjust_futuser_price_precision(client, symbol, current_price * (1 - base_stop_loss))
+            client.futures_create_order(
+                symbol=symbol,
+                side="SELL",
+                type="STOP_MARKET",
+                stopPrice=stop_loss_price,
+                closePosition=True
+            )
 
-        # target_price = current_price * (1 + base_profit_target)
-        # stop_loss_price = current_price * (1 - base_stop_loss)
-
-        # إعداد أمر جني الأرباح
-        # client.futures_create_order(
-        #     symbol=symbol,
-        #     side='BUY',
-        #     type='TAKE_PROFIT_MARKET',
-        #     stopPrice=target_price,
-        #     closePosition=True
-        # )
-        client.futures_create_order(
-            symbol=symbol,
-            side='SELL',
-            type='TAKE_PROFIT_MARKET',
-            stopPrice=target_price,
-            closePosition=True
-        )
-        # client.futures_create_order(
-        #     symbol=symbol,
-        #     side='BUY',
-        #     type='TAKE_PROFIT_MARKET',
-        #     stopPrice=target_price,
-        #     closePosition=True
-        # )
-
-
-        print(f"تم فتح صفقة شراء {symbol} بنجاح!")
-        print(f"تم تحديد مستوى جني الأرباح عند {target_price}")
-        # print(f"تم تحديد مستوى جني الأرباح عند {target_price}")
-        print(f"تم تعيين وقف الخسارة عند {stop_loss_price}.")
-
-        client.futures_create_order(
-            symbol=symbol,
-            side="SELL",
-            type="STOP_MARKET",
-            stopPrice=stop_loss_price,
-            closePosition=True
-        )
-        # client.futures_create_order(
-        #     symbol=symbol,
-        #     side="BUY",
-        #     type="STOP_MARKET",
-        #     stopPrice=stop_loss_price,
-        #     closePosition=True
-        # )
-        print(f"تم تعيين وقف الخسارة عند {stop_loss_price}.")
-        # تسجيل البيانات في حال أردت المتابعة لاحقًا
-        payload = {
-            "symbol": symbol,
-            "quantity": quantity,
-            "initial_price": current_price,
-            "target_price": target_price,
-            'stop_price': stop_loss_price,
-            'start_time':str(datetime.fromtimestamp(time.time())),
-            "timeout": timeout * 60,
-            "investment": investment,
-            "is_futuer": True
+            print(f"تم تعيين وقف الخسارة عند {stop_loss_price}.")
+            # تسجيل البيانات في حال أردت المتابعة لاحقًا
+            payload = {
+                "symbol": symbol,
+                "quantity": quantity,
+                "initial_price": current_price,
+                "target_price": target_price,
+                'stop_price': stop_loss_price,
+                'start_time':str(datetime.fromtimestamp(time.time())),
+                "timeout": timeout * 60,
+                "investment": investment,
+                "is_futuer": True
         }
         # order_response= request_load.create_trad(payload)
         _active_trades = helper.get_futuer_active_trades(client)
         active_trades = request_load.get_futuer_open_trad()
         balance = helper.get_futuer_usdt_balance(client)
         helper.update_futuer_active_trades(client)
-        # __active_symbol[symbol] = payload
         print(f"عدد الصفقات المفتوحة حاليًا: {helper.get_open_positions_count(client)}")
 
         return payload

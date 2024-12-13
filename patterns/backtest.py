@@ -9,9 +9,9 @@ import ta
 # استخدم دالة fetch_historical_data لتحميل البيانات
 # أو قم بتحميل بيانات جاهزة في صيغة DataFrame
 
-klines_interval=Client.KLINE_INTERVAL_5MINUTE
+klines_interval=Client.KLINE_INTERVAL_1MINUTE
 count_top_symbols=200
-analize_period= 50
+analize_period= 200
 excluded_symbols = set()  # قائمة العملات المستثناة بسبب أخطاء متكررة
 klines_limit=20
 black_list=[
@@ -475,9 +475,13 @@ class ICTStrategy(Strategy):
         
         
         
-        
+        is_buy = False
+        is_sell = False
+        side = ""
+    
         
         bos_detected = self.data.BOS[-1]
+        
         double_bottom = detect_double_bottom(self.data)
         inverse_hns = detect_inverse_head_and_shoulders(self.data)
         hammer= detect_hammer(self.data)
@@ -505,14 +509,15 @@ class ICTStrategy(Strategy):
                 piercing_line  or 
                 hammer
             ):
+            is_buy = True
         # if bos  and  (double_bottom or inverse_hns or hammer):
         # if self.rsi < 40 and (double_bottom or inverse_hns or hammer or bullish_engulfing or morning_star or piercing_line or three_white_soldiers):
-            if not self.position:
-                close_price = self.data.Close[-1]
+            # if not self.position:
+            #     close_price = self.data.Close[-1]
 
-                stop_loss_price = close_price * (1 - self.stop_loss)
-                take_profit_price = close_price * (1 + self.profit_target)
-                self.buy(sl=stop_loss_price, tp=take_profit_price)     
+            #     stop_loss_price = close_price * (1 - self.stop_loss)
+            #     take_profit_price = close_price * (1 + self.profit_target)
+            #     self.buy(sl=stop_loss_price, tp=take_profit_price)     
                 
                 
                 # close_price = self.data.Close[-1]
@@ -520,50 +525,54 @@ class ICTStrategy(Strategy):
                 # take_profit_price = close_price * (1 - self.profit_target)
                 # self.sell(sl=stop_loss_price, tp=take_profit_price)
             
-        
-        
-        # shooting_star = detect_shooting_star(self.data)
-        # bearish_engulfing = detect_bearish_engulfing(self.data)
-        # evening_star = detect_evening_star(self.data)
-        # double_top = detect_double_top(self.data)
-        # head_and_shoulders = detect_head_and_shoulders(self.data)
-        # inverted_hammer = detect_inverted_hammer(self.data)
-        # bos_detected = self.data.BOS[-1]
+        close_price = self.data.Close[-1]
 
-        # large_top = detect_large_top(self.data)
-        # big_move_down = detect_big_move_down(self.data)
-        # bearish_breakout = detect_bearish_breakout(self.data)
-        # bearish_trend = detect_bearish_trend(self.data)
-        # # if bos and (shooting_star or bearish_engulfing or evening_star or double_top or head_and_shoulders or inverted_hammer or large_top or big_move_down or bearish_breakout or bearish_trend):
-        # if bos_detected and (
-        # # if  (
-        #         head_and_shoulders or 
-        #         double_top or 
-        #         bearish_engulfing or 
-        #         shooting_star or 
-        #         evening_star or 
-        #         inverted_hammer or 
-        #         large_top or 
-        #         big_move_down  or 
-        #         bearish_breakout or 
-        #         bearish_trend
-        #         ):
+        
+        shooting_star = detect_shooting_star(self.data)
+        bearish_engulfing = detect_bearish_engulfing(self.data)
+        evening_star = detect_evening_star(self.data)
+        double_top = detect_double_top(self.data)
+        head_and_shoulders = detect_head_and_shoulders(self.data)
+        inverted_hammer = detect_inverted_hammer(self.data)
+        bos_detected = self.data.BOS[-1]
+
+        large_top = detect_large_top(self.data)
+        big_move_down = detect_big_move_down(self.data)
+        bearish_breakout = detect_bearish_breakout(self.data)
+        bearish_trend = detect_bearish_trend(self.data)
+        # if bos and (shooting_star or bearish_engulfing or evening_star or double_top or head_and_shoulders or inverted_hammer or large_top or big_move_down or bearish_breakout or bearish_trend):
+        if bos_detected and (
+        # if  (
+                head_and_shoulders or 
+                double_top or 
+                bearish_engulfing or 
+                shooting_star or 
+                evening_star or 
+                inverted_hammer or 
+                large_top or 
+                big_move_down  or 
+                bearish_breakout or 
+                bearish_trend
+                ):
+                is_sell=True
+                
+        if is_buy == True and is_sell == True:
+            return
+        
+        if is_buy and not self.position:
+            close_price = self.data.Close[-1]
+
+            stop_loss_price = close_price * (1 - self.stop_loss)
+            take_profit_price = close_price * (1 + self.profit_target)
+            self.buy(sl=stop_loss_price, tp=take_profit_price)
             
-        #     if not self.position:
-        #         close_price = self.data.Close[-1]
-        #         stop_loss_price = close_price * (1 + self.stop_loss)
-        #         take_profit_price = close_price * (1 - self.profit_target)
-        #         self.sell(sl=stop_loss_price, tp=take_profit_price)
-                
-        #         close_price = self.data.Close[-1]
-        #         stop_loss_price = close_price * (1 - self.stop_loss)
-        #         take_profit_price = close_price * (1 + self.profit_target)
-        #         self.buy(sl=stop_loss_price, tp=take_profit_price)   
-                
-            # bos_detected = self.data.BOS[-1]
-            # double_bottom = detect_double_bottom(self.data)
-            # inverse_hns = detect_inverse_head_and_shoulders(self.data)
-            # hammer= detect_hammer(self.data)
+            
+        if is_sell and not self.position:
+            close_price = self.data.Close[-1]
+
+            stop_loss_price = close_price * (1 + self.stop_loss)
+            take_profit_price = close_price * (1 - self.profit_target)
+            self.sell(sl=stop_loss_price, tp=take_profit_price)
             
         
         # # print(f"BOS Detected: {bos_detected}")
