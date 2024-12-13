@@ -13,6 +13,28 @@ start_date='3 hours ago UTC'
 analize_period=80
 rsi_analize_period = 8
 
+
+def get_futuer_top_symbols(client, klines_interval,limit=20, excluded_symbols=[],black_list=[]):
+    tickers = client.futures_ticker()
+    exchange_info = client.futures_exchange_info()  # جلب معلومات التداول
+    valid_symbols = {info['symbol'] for info in exchange_info['symbols']}  # الرموز المسموح بها
+    sorted_tickers = sorted(tickers, key=lambda x: float(x['quoteVolume']), reverse=True)
+    top_symbols = []
+    
+    for ticker in sorted_tickers:
+        if ticker['symbol'].endswith("USDT") and ticker['symbol'] in valid_symbols and ticker['symbol'] not in excluded_symbols and ticker['symbol'] not in black_list :  # تحقق من صلاحية الرمز
+            try:
+                klines = client.get_klines(symbol=ticker['symbol'], interval=klines_interval, limit=limit)
+                if klines is None or klines == []:
+                    continue
+                top_symbols.append(ticker['symbol'])
+                if len(top_symbols) >= limit:
+                    break
+            except BinanceAPIException as e:
+                # print(f"خطأ في جلب بيانات {ticker['symbol']}: {e}")
+                excluded_symbols.append(ticker['symbol'])
+    return top_symbols
+
 def get_klines(client, symbol, interval, start_date):
     # klines = client.get_historical_klines(symbol, interval, start_date)
     return  client.get_historical_klines(symbol, interval, start_date)

@@ -69,10 +69,12 @@ leverage = settings.leverage()    # ال80رافعة المالية
 
 
 excluded_symbols =[]  # قائمة العملات المستثناة بسبب أخطاء متكررة
-symbols_to_trade =request_load.get_futuer_top_symbols(count_top_symbols ,excluded_symbols)
+# symbols_to_trade = helper.get_futuer_top_symbols(client=client,klines_interval=settings.klines_interval(),limit=int(settings.count_top_symbols()) ,excluded_symbols=excluded_symbols)
+symbols_to_trade = request_load.get_futuer_top_symbols(int(settings.count_top_symbols())  ,excluded_symbols)
+
 last_trade_time = {}
 
-top_symbols=request_load.get_futuer_top_symbols(count_top_symbols ,excluded_symbols)
+top_symbols= request_load.get_futuer_top_symbols(int(settings.count_top_symbols())  ,excluded_symbols)
 
 __active_symbol = {}
 _symbols = client.futures_exchange_info()['symbols']
@@ -107,7 +109,9 @@ def open_futures_trade(symbol, investment, leverage):
     # if not settings.can_trad():
     #     # print("the trading is of can't open more trad")
     #     return
-    if helper.get_open_positions_count(client) >= MAX_POSITIONS:
+    # if helper.get_open_positions_count(client) >= MAX_POSITIONS:
+    if helper.get_open_positions_count(client) >= settings.max_trad() :
+
         return
     
     
@@ -130,6 +134,8 @@ def open_futures_trade(symbol, investment, leverage):
         return
     
     # time.sleep(3)
+    base_profit_target=settings.profit_target() # نسبة الربح
+    base_stop_loss= settings.stop_loss()  
     try:
         # ضبط الرافعة المالية
         client.futures_change_leverage(symbol=symbol, leverage=leverage)
@@ -483,12 +489,12 @@ def check_trade_conditions():
 # تحديث قائمة الرموز بشكل دوري
 def update_symbols_periodically(interval=600):
     global symbols_to_trade,balance
-    balance = helper.get_futuer_usdt_balance(client)
-    print(f"الرصيد المتبقي {balance}")
+    # balance = helper.get_futuer_usdt_balance(client)
+    # print(f"الرصيد المتبقي {balance}")
 
     print()
     while True:
-        symbols_to_trade = request_load.get_futuer_top_symbols(count_top_symbols,excluded_symbols)
+        symbols_to_trade = helper.get_futuer_top_symbols(client=client,klines_interval=settings.klines_interval(),limit=int(settings.count_top_symbols()) ,excluded_symbols=excluded_symbols)
         print(f"{datetime.now()} - تم تحديث قائمة العملات للتداول: {symbols_to_trade}")
         time.sleep(interval)
 
@@ -552,7 +558,7 @@ def run_bot():
     global symbols_to_trade
     print(f"عدد الصفقات المفتوحة حاليًا: {helper.get_open_positions_count(client)}")
     helper.update_futuer_active_trades(client)
-    symbols_to_trade = request_load.get_futuer_top_symbols(count_top_symbols,excluded_symbols)
+    symbols_to_trade = request_load.get_futuer_top_symbols(int(settings.count_top_symbols())  ,excluded_symbols)
     print(symbols_to_trade)
     symbol_update_thread = threading.Thread(target=update_symbols_periodically, args=(600,))
     symbol_update_thread.start()
