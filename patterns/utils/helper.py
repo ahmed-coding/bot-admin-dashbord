@@ -467,9 +467,37 @@ def fetch_ict_ris_binance_data(client, symbol, interval, period=14, limit=500):
     candles = client.futures_klines(symbol=symbol, interval=interval, limit=limit + period)
     closing_prices = [float(candle[4]) for candle in candles]
     
+    
     # حساب RSI
     rsi_values = ict_calculate_rsi(closing_prices, period=period)
+    print(f"{symbol} - rsi : {rsi_values[-1]}" )
+    # إعادة آخر قيمة RSI
+    return rsi_values[-1] if rsi_values else None
+
+
+def fetch_ict_ris_binance_data(data , symbol, interval, period=14, limit=500):
+    """
+    جلب بيانات RSI بناءً على أسعار الإغلاق.
     
+    Args:
+        client: كائن العميل للتواصل مع Binance API.
+        symbol (str): رمز الزوج (مثل BTCUSDT).
+        interval (str): الإطار الزمني (مثل 5m، 15m).
+        period (int): فترة حساب RSI.
+        limit (int): عدد الشموع المطلوبة.
+        
+    Returns:
+        float: قيمة RSI الأخيرة.
+    """
+    # جلب بيانات الشموع
+    # candles = client.futures_klines(symbol=symbol, interval=interval, limit=limit + period)
+    # closing_prices = [float(candle[4]) for candle in candles]
+    closing_prices = data['Close']
+    
+    
+    # حساب RSI
+    rsi_values = ict_calculate_rsi(closing_prices, period=period)
+    # print(f"{symbol} - rsi : {rsi_values[-1]}" )
     # إعادة آخر قيمة RSI
     return rsi_values[-1] if rsi_values else None
 
@@ -1052,9 +1080,13 @@ def pattern_should_open_trade(client, symbol, interval, limit, rsi_period):
     """
     # جلب البيانات
     data = fetch_ict_data(client, symbol, interval, limit=limit)
-    bos_data = data
+    # rsi = fetch_ict_ris_binance_data(data, symbol, interval, period=rsi_period, limit=limit)
+
+    # bos_data = data
     data = data[:-1]
-    
+    bos_data = data
+    rsi = fetch_ict_ris_binance_data(data, symbol, interval, period=rsi_period, limit=limit)
+
     
     # rsi = fetch_ict_ris_binance_data(client, symbol, interval, period=rsi_period, limit=limit)
     
@@ -1075,20 +1107,23 @@ def pattern_should_open_trade(client, symbol, interval, limit, rsi_period):
     triple_top =  detect_triple_top(data)  # تبديل النمط من بيع الى شراء 
     head_and_shoulders = detect_head_and_shoulders(data) # checkd
     inverted_hammer = detect_inverted_hammer(data)
+    double_top = detect_double_top(data) # تبديل النمط من بيع الى شراء 
+
     large_top = detect_large_top(data) # checkd ملغي
     big_move_down = detect_big_move_down(data) # checkd
     bearish_breakout = detect_bearish_breakout(data)
     bearish_trend = detect_bearish_trend(data)
-    
+    double_bottom = detect_double_bottom(data)
     bearish_flag = detect_bearish_flag(data) 
     # if bos and (shooting_star or bearish_engulfing or evening_star or double_top or head_and_shoulders or inverted_hammer or large_top or big_move_down or bearish_breakout or bearish_trend):
-    if bos_sell and (
+    if  rsi > 85 and (
     # if  (
                 head_and_shoulders or   # 95% - نمط قوي جدًا يشير إلى انعكاس الاتجاه إلى الهبوط
-                # double_top #or          # 90% - نمط قوي لانعكاس هبوطي بعد قمتين
-                triple_top or          # 85% - نمط ثلاث قمم يشير إلى انعكاس هبوطي قوي
+                # double_top or          # 90% - نمط قوي لانعكاس هبوطي بعد قمتين
+                # double_bottom or
+                # triple_top or          # 85% - نمط ثلاث قمم يشير إلى انعكاس هبوطي قوي
                 bearish_engulfing or   # 80% - نمط ابتلاعي هبوطي موثوق
-                # shooting_star or       # 75% - نمط شمعة يشير إلى انعكاس الاتجاه للأسفل
+                shooting_star or       # 75% - نمط شمعة يشير إلى انعكاس الاتجاه للأسفل
                 bearish_flag  #or       # 70% - نمط يشير إلى استمرارية الاتجاه الهبوطي
                 ## evening_star #or        # 65% - نمط انعكاسي يشير إلى بداية اتجاه هبوطي
                 # large_top  #or           # 60% - نمط قمة كبيرة يشير إلى احتمال الهبوط
@@ -1122,12 +1157,14 @@ def pattern_should_open_trade(client, symbol, interval, limit, rsi_period):
     bullish_flag = detect_bullish_flag(data) # checkd
     # # if bos  and  (double_bottom or inverse_hns or hammer):
     
-    if bos_buy and (
+    # if bos_buy  (
+    if  rsi > 25 and  rsi < 45 and (
+
     # if (
 
                 three_white_soldiers or  # 95% - نمط قوي جدًا وموثوق في الاتجاه الصاعد
-                double_bottom or         # 90% - نمط قوي ويشير إلى انعكاس صعودي
-                double_top or
+                # double_bottom or         # 90% - نمط قوي ويشير إلى انعكاس صعودي
+                # double_top or
                 inverse_hns #or           # 85% - نمط قوي ومؤشر لانعكاس الاتجاه إلى صعود
                 # triple_top 
                 
@@ -1158,9 +1195,9 @@ def pattern_should_open_trade(client, symbol, interval, limit, rsi_period):
         return False, " "
 
     # تحديد الإشارة النهائية
-    # if is_sell:
-    #     print(f"📉 إشارة بيع على {symbol}")
-    #     return True, "sell"
+    if is_sell:
+        print(f"📉 إشارة بيع على {symbol}")
+        return True, "sell"
 
     if is_buy:
         print(f"📈 إشارة شراء على {symbol}")

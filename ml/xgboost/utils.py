@@ -54,6 +54,7 @@ def fetch_ict_data(client, symbol, interval='1m', years=5):
     df['Volume'] = df['Volume'].astype(float)
     df['Open_Time'] = pd.to_datetime(df['Open_Time'], unit='ms')
     
+    
     return df[['Open_Time', 'Open', 'High', 'Low', 'Close', 'Volume']]
 
 # مثال للاستخدام:

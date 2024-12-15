@@ -36,11 +36,11 @@ excluded_symbols = set()  # قائمة العملات المستثناة بسب�
 # bot_settings=Settings()
 symbols_to_trade =[]
 last_trade_time = {}
-klines_interval=Client.KLINE_INTERVAL_5MINUTE
+klines_interval=Client.KLINE_INTERVAL_3MINUTE
 klines_limit=1
 top_symbols=[]
-count_top_symbols=70
-analize_period=80
+count_top_symbols=10
+analize_period=120
 black_list=[
         # # 'XRPUSDT',
         # 'ETHUSDT', 'BTCUSDT', 'SOLUSDT', 'ENSUSDT', 'BNBUSDT', 'FILUSDT',
@@ -152,8 +152,6 @@ def bol_h(df):
 def bol_l(df):
     return ta.volatility.BollingerBands(pd.Series(df)).bollinger_lband() 
 
-
-# حساب مؤشر RSI
 def calculate_rsi(data, period=14):
     """حساب RSI متوافق مع مكتبة Backtesting"""
     deltas = pd.Series(data).diff()  # تحويل البيانات إلى pandas Series للتوافق
@@ -164,6 +162,53 @@ def calculate_rsi(data, period=14):
     rs = avg_gain / avg_loss
     rsi = 100 - (100 / (1 + rs))
     return rsi
+
+
+# حساب مؤشر RSI
+def ict_calculate_rsi(prices, period=14):
+    """
+    حساب مؤشر RSI بناءً على فترة محددة.
+    
+    Args:
+        prices (list): قائمة بأسعار الإغلاق.
+        period (int): فترة الحساب (default: 14).
+    
+    Returns:
+        list: قائمة بقيم RSI لكل فترة.
+    """
+    # if len(prices) < period + 1:
+    #     raise ValueError("عدد البيانات أقل من الفترة المطلوبة لحساب RSI.")
+    
+    # حساب التغيرات (Deltas)
+    deltas = [prices[i] - prices[i - 1] for i in range(1, len(prices))]
+    
+    # المكاسب والخسائر الأولية
+    gains = [max(delta, 0) for delta in deltas]
+    losses = [abs(min(delta, 0)) for delta in deltas]
+    
+    # حساب متوسط المكاسب والخسائر الأولية
+    avg_gain = sum(gains[:period]) / period
+    avg_loss = sum(losses[:period]) / period
+    
+    # قائمة لقيم RSI
+    rsis = []
+    
+    # البدء من الفترة بعد حساب المتوسطات الأولية
+    for i in range(period, len(prices) - 1):
+        gain = gains[i]
+        loss = losses[i]
+        
+        # المتوسطات الملساء
+        avg_gain = ((avg_gain * (period - 1)) + gain) / period
+        avg_loss = ((avg_loss * (period - 1)) + loss) / period
+        
+        # حساب RSI
+        rs = avg_gain / avg_loss if avg_loss != 0 else 0
+        rsi = 100 - (100 / (1 + rs))
+        
+        rsis.append(rsi)
+    
+    return rsis[-1]
 
 # تعريف الاستراتيجية
 class RSIStrategy(Strategy):
@@ -215,18 +260,20 @@ class RSIStrategy(Strategy):
                     
     def next(self):
         price = self.data.Close[-1]
-        stop_loss_price = price * (1 - self.stop_loss)
-        take_profit_price = price * (1 + self.profit_target)
-        if self.data.Close[-3] > self.bol_l[-3] and self.data.Close[-2] < self.bol_l[-2]:
+
+        if self.data.Close[-3] > self.bol_l[-3] and self.data.Close[-2] < self.bol_l[-2] :
             if not self.position:
+                stop_loss_price = price * (1 - self.stop_loss)
+                take_profit_price = price * (1 + self.profit_target)
                 self.buy(sl=stop_loss_price, tp=take_profit_price)
                 
         
         
-        # if self.data.Close[-3] < self.bol_h[-3] and self.data.Close[-2] > self.bol_h[-2]:
-        #     for trade in self.trades:
-        #         if trade.is_long:
-        #             self.position.close()
+        if self.data.Close[-3] < self.bol_h[-3] and self.data.Close[-2] > self.bol_h[-2]:
+            if not self.position:
+                stop_loss_price = price * (1 + self.stop_loss)
+                take_profit_price = price * (1 - self.profit_target)
+                self.sell(sl=stop_loss_price, tp=take_profit_price)
 
 
 # تحميل البيانات التاريخية (استخدام Binance أو بيانات جاهزة)
@@ -245,6 +292,7 @@ def fetch_binance_data(symbol, interval, start_date, end_date):
     data['low'] = data['low'].astype(float)
     data['close'] = data['close'].astype(float)
     data['volume'] = data['volume'].astype(float)
+    
     return data[['timestamp', 'open', 'high', 'low', 'close', 'volume']].rename(columns={
         'timestamp': 'Date', 'open': 'Open', 'high': 'High', 'low': 'Low', 'close': 'Close', 'volume': 'Volume'
     }).set_index('Date')
@@ -265,7 +313,7 @@ result=[]
 # تنفيذ الباكتيست
 if __name__ == "__main__":
     # استخدم بيانات Binance أو بيانات جاهزة
-    for symbol in get_top_symbols(200):
+    for symbol in get_top_symbols(count_top_symbols):
         # data = fetch_binance_data(symbol, Client.KLINE_INTERVAL_3MINUTE, "12 hours ago UTC", "6 hours ago UTC")
         data = fetch_binance_data(symbol, klines_interval, "3 hours ago UTC", "6 hours ago UTC")
 
@@ -297,8 +345,8 @@ if __name__ == "__main__":
 
 
 excel = pd.DataFrame(result)
-excel.columns = ['Symbol', 'Return', 'Trades', 'Win Rate', 'Best Trade', 'Worst Trade','Max Duration','Avg Duration']
-excel.loc[len(excel.index)] = ['Total', excel['Return'].sum(), excel['Trades'].sum(), '', '', '','', '']
+excel.columns = ['Symbol', 'Return', 'Trades', 'Win Rate', 'Best Trade', 'Worst Trade','Max Duration','Avg Duration',]
+excel.loc[len(excel.index)] = ['Total', excel['Return'].sum(), excel['Trades'].sum(), excel['Win Rate'].sum() / count_top_symbols, '', '','', '']
 
 # excel.to_excel('result.xlsx')
 
