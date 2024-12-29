@@ -234,6 +234,7 @@ def open_futures_trade(symbol, investment, leverage):
             _stop_loss_price = current_price * (1 - base_stop_loss)
             stop_loss_price = float(helper.Pric_Precision(client,_stop_loss_price, symbol))
             target_price = float(helper.Pric_Precision(client, _target_price, symbol))
+            
             payload = {
                 "symbol": symbol,
                 "quantity": quantity,
