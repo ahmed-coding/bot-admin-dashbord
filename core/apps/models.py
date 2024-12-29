@@ -46,12 +46,13 @@ class Trade(models.Model):
     def __str__(self):
         return self.symbol
     
-    
 
 class BotSettings(models.Model):
     key= models.CharField(max_length=100)
     value= models.CharField(max_length=100)
-
+    description = models.TextField(help_text="description for settings what is do?")
+    for_futuer = models.BooleanField(default=False,help_text=("valid for futuer bot?"))
+    for_spot = models.BooleanField(default=False,help_text=("valid for spot bot?"))
     def __str__(self):
         return self.key
     
