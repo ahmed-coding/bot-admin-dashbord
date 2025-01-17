@@ -26,8 +26,8 @@ class FutuerSymbolView(viewsets.ModelViewSet):
                        filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['symbol', 'win_rate']
     ordering_fields = '__all__'
-    queryset = models.FSymbol.objects.filter(win_rate__gt=70).order_by('win_rate')
-    # queryset = models.FSymbol.objects.all().order_by('win_rate')
+    # queryset = models.FSymbol.objects.filter(win_rate__gt=70).order_by('win_rate')
+    queryset = models.FSymbol.objects.all().order_by('win_rate')
 
 
 

@@ -6,10 +6,12 @@ import numpy as np
 from binance.exceptions import BinanceAPIException
 from ict_bot import *
 import ta
+from ta.momentum import rsi
+
 # استخدم دالة fetch_historical_data لتحميل البيانات
 # أو قم بتحميل بيانات جاهزة في صيغة DataFrame
 
-klines_interval=Client.KLINE_INTERVAL_1MINUTE
+klines_interval=Client.KLINE_INTERVAL_5MINUTE
 count_top_symbols=200
 analize_period= 200
 excluded_symbols = set()  # قائمة العملات المستثناة بسبب أخطاء متكررة
@@ -49,7 +51,7 @@ def detect_bos(data,is_sell=False):
     """
     اكتشاف كسر الهيكل (BOS) في بيانات Pandas.
     """
-    # data['BOS'] = (data['Close'] > data['High'].shift(1)) | (data['Close'] < data['Low'].shift(1))
+    data['BOS'] = (data['Close'] > data['High'].shift(1)) | (data['Close'] < data['Low'].shift(1))
     # data['BOS'] = ((data['Close'] > data['Close'].shift(1)) | (data['Close'] > data['High'].shift(1)))
     # if is_sell:
         # data['BOS'] = ((data['Close'] < data['Close'].shift(1)) & (data['Close'] < data['Low'].shift(1)))
@@ -58,7 +60,7 @@ def detect_bos(data,is_sell=False):
     # data['BOS'] = ((data['Close'] < data['Close'].shift(1)) & (data['Close'] < data['Low'].shift(1)))
 
     
-    data['BOS'] = ((data['Close'] > data['Close'].shift(1)) | (data['Close'] > data['High'].shift(1)))
+    # data['BOS'] = ((data['Close'] > data['Close'].shift(1)) | (data['Close'] > data['High'].shift(1)))
     
     # data['BOS'] = ((data['Close'] > data['High'].shift(1)))
     # data['BOS'] = ((data['Close'] > data['High'].shift(1)))
@@ -89,16 +91,56 @@ def load_data(symbol, intervel, period):
     return data
 
 
-def calculate_rsi(data, period=14):
+# def calculate_rsi(prices, period=14):
+#     """
+#     حساب مؤشر RSI بناءً على فترة محددة.
+    
+#     Args:
+#         prices (list): قائمة بأسعار الإغلاق.
+#         period (int): فترة الحساب (default: 14).
+    
+#     Returns:
+#         list: قائمة بقيم RSI لكل فترة.
+#     """
+#     # prices = pd.Series(prices).diff()
+#     if len(prices) < period + 1:
+#         raise ValueError("عدد البيانات أقل من الفترة المطلوبة لحساب RSI.")
+#     # deltas = pd.Series(data)
+#     # حساب التغيرات (Deltas)
+#     deltas = [prices[i] - prices[i - 1] for i in range(1, len(prices))]
+    
+#     # المكاسب والخسائر الأولية
+#     gains = [max(delta, 0) for delta in deltas]
+#     losses = [abs(min(delta, 0)) for delta in deltas]
+    
+#     # حساب متوسط المكاسب والخسائر الأولية
+#     avg_gain = sum(gains[:period]) / period
+#     avg_loss = sum(losses[:period]) / period
+    
+#     # قائمة لقيم RSI
+#     rsis = pd.Series()
+    
+#     # البدء من الفترة بعد حساب المتوسطات الأولية
+#     for i in range(period, len(prices) - 1):
+#         gain = gains[i]
+#         loss = losses[i]
+        
+#         # المتوسطات الملساء
+#         avg_gain = ((avg_gain * (period - 1)) + gain) / period
+#         avg_loss = ((avg_loss * (period - 1)) + loss) / period
+        
+#         # حساب RSI
+#         rs = avg_gain / avg_loss if avg_loss != 0 else 0
+#         rsi = 100 - (100 / (1 + rs))
+        
+#         rsis.append(rsi)
+    
+#     return rsis
+
+
+def calculate_rsi(data, period=8):
     """حساب RSI متوافق مع مكتبة Backtesting"""
-    deltas = pd.Series(data).diff()  # تحويل البيانات إلى pandas Series للتوافق
-    gains = deltas.where(deltas > 0, 0.0)
-    losses = -deltas.where(deltas < 0, 0.0)
-    avg_gain = gains.rolling(window=period).mean()
-    avg_loss = losses.rolling(window=period).mean()
-    rs = avg_gain / avg_loss
-    rsi = 100 - (100 / (1 + rs))
-    return rsi
+    return rsi(close=pd.Series(data), window=period)
 
 
 def bol_h(df):
@@ -463,9 +505,6 @@ class ICTStrategy(Strategy):
         self.bol_h=self.I(bol_h, self.data.Close)
         self.bol_l=self.I(bol_l, self.data.Close)
     
-    
-    
-    
     def next(self):
         
         
@@ -495,6 +534,7 @@ class ICTStrategy(Strategy):
         bullish_breakout = detect_bullish_breakout(self.data)
         # # if bos  and  (double_bottom or inverse_hns or hammer):
         
+        # if self.rsi[-1] < 40 and bos_detected and (
         if bos_detected and (
 
         # if (
@@ -541,7 +581,8 @@ class ICTStrategy(Strategy):
         bearish_breakout = detect_bearish_breakout(self.data)
         bearish_trend = detect_bearish_trend(self.data)
         # if bos and (shooting_star or bearish_engulfing or evening_star or double_top or head_and_shoulders or inverted_hammer or large_top or big_move_down or bearish_breakout or bearish_trend):
-        if bos_detected and (
+        # if self.rsi[-1] > 80 and bos_detected and (
+        if  bos_detected and (
         # if  (
                 head_and_shoulders or 
                 double_top or 

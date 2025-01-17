@@ -1116,18 +1116,19 @@ def pattern_should_open_trade(client, symbol, interval, limit, rsi_period):
     double_bottom = detect_double_bottom(data)
     bearish_flag = detect_bearish_flag(data) 
     # if bos and (shooting_star or bearish_engulfing or evening_star or double_top or head_and_shoulders or inverted_hammer or large_top or big_move_down or bearish_breakout or bearish_trend):
-    if  rsi > 85 and (
+    # if  rsi > 85 and (
+    if  bos_sell and (
     # if  (
                 head_and_shoulders or   # 95% - نمط قوي جدًا يشير إلى انعكاس الاتجاه إلى الهبوط
-                # double_top or          # 90% - نمط قوي لانعكاس هبوطي بعد قمتين
+                double_top or          # 90% - نمط قوي لانعكاس هبوطي بعد قمتين
                 # double_bottom or
-                # triple_top or          # 85% - نمط ثلاث قمم يشير إلى انعكاس هبوطي قوي
+                triple_top or          # 85% - نمط ثلاث قمم يشير إلى انعكاس هبوطي قوي
                 bearish_engulfing or   # 80% - نمط ابتلاعي هبوطي موثوق
                 shooting_star or       # 75% - نمط شمعة يشير إلى انعكاس الاتجاه للأسفل
-                bearish_flag  #or       # 70% - نمط يشير إلى استمرارية الاتجاه الهبوطي
-                ## evening_star #or        # 65% - نمط انعكاسي يشير إلى بداية اتجاه هبوطي
-                # large_top  #or           # 60% - نمط قمة كبيرة يشير إلى احتمال الهبوط
-                # inverted_hammer #or     # 55% - نمط شمعة انعكاسي متوسط القوة
+                bearish_flag  or       # 70% - نمط يشير إلى استمرارية الاتجاه الهبوطي
+                evening_star or        # 65% - نمط انعكاسي يشير إلى بداية اتجاه هبوطي
+                large_top  or           # 60% - نمط قمة كبيرة يشير إلى احتمال الهبوط
+                inverted_hammer #or     # 55% - نمط شمعة انعكاسي متوسط القوة
                 # big_move_down #or       # 50% - حركة هبوط كبيرة ولكن قد تكون مؤقتة
                 # bearish_breakout# or    # 50% - كسر هبوطي ولكن يحتاج إلى تأكيد
                 # bearish_trend          # 50% - استمرار الاتجاه الهبوطي ولكن يعتمد على الظروف
@@ -1157,25 +1158,25 @@ def pattern_should_open_trade(client, symbol, interval, limit, rsi_period):
     bullish_flag = detect_bullish_flag(data) # checkd
     # # if bos  and  (double_bottom or inverse_hns or hammer):
     
-    # if bos_buy  (
-    if  rsi > 25 and  rsi < 45 and (
+    if bos_buy and  (
+    # if  rsi > 25 and  rsi < 45 and (
 
     # if (
 
                 three_white_soldiers or  # 95% - نمط قوي جدًا وموثوق في الاتجاه الصاعد
-                # double_bottom or         # 90% - نمط قوي ويشير إلى انعكاس صعودي
+                double_bottom or         # 90% - نمط قوي ويشير إلى انعكاس صعودي
                 # double_top or
-                inverse_hns #or           # 85% - نمط قوي ومؤشر لانعكاس الاتجاه إلى صعود
-                # triple_top 
+                inverse_hns or           # 85% - نمط قوي ومؤشر لانعكاس الاتجاه إلى صعود
+                triple_top or
                 
                 
                 # bullish_engulfing  or     # 80% - نمط موثوق يشير إلى صعود
-                # morning_star  #or          # 75% - نمط إيجابي يشير إلى بداية اتجاه صاعد
-                # bullish_flag #or          # 70% - نمط يشير إلى استمرارية الاتجاه الصاعد
-                # large_base  or            # 65% - يشير إلى تكوين قاعدة قوية لدعم الصعود
-                # big_move_up #or           # 60% - يشير إلى حركة صاعدة كبيرة ولكنها أقل دقة
-                ## piercing_line #or         # 55% - نمط متوسط القوة يشير إلى انعكاس محتمل
-                ## hammer #or                # 50% - نمط انعكاسي صاعد ولكنه ضعيف نسبيًا
+                # morning_star  or          # 75% - نمط إيجابي يشير إلى بداية اتجاه صاعد
+                bullish_flag or          # 70% - نمط يشير إلى استمرارية الاتجاه الصاعد
+                large_base  or            # 65% - يشير إلى تكوين قاعدة قوية لدعم الصعود
+                big_move_up #or           # 60% - يشير إلى حركة صاعدة كبيرة ولكنها أقل دقة
+                # piercing_line #or         # 55% - نمط متوسط القوة يشير إلى انعكاس محتمل
+                # hammer #or                # 50% - نمط انعكاسي صاعد ولكنه ضعيف نسبيًا
                 
                 # cup_and_handle           # 50% - نمط انعكاسي ولكنه يتطلب تأكيدًا إضافيًا
                 # bullish_breakout

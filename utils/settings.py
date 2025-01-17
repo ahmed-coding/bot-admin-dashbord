@@ -104,7 +104,7 @@ class BaseSettings:
         
         for item in self.data:
             if item['key'] == 'leverage':
-                return int(item['value'])
+                return int(item['value']) 
         return None
     
     

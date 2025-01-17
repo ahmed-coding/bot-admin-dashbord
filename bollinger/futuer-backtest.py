@@ -39,7 +39,7 @@ last_trade_time = {}
 klines_interval=Client.KLINE_INTERVAL_5MINUTE
 klines_limit=1
 top_symbols=[]
-count_top_symbols=250
+count_top_symbols=10
 analize_period=300
 black_list=[
         # # 'XRPUSDT',
@@ -212,13 +212,13 @@ def calculate_rsi(prices, period=14):
     return rsis
 
 
-def calculate_rsi(data, period=8):
-    """حساب RSI متوافق مع مكتبة Backtesting"""
-    return rsi(close=pd.Series(data), window=period)
+# def calculate_rsi(data, period=8):
+#     """حساب RSI متوافق مع مكتبة Backtesting"""
+#     return rsi(close=pd.Series(data), window=period)
 
 # تعريف الاستراتيجية
 class RSIStrategy(Strategy):
-    rsi_period = 10  # الفترة الزمنية لمؤشر RSI
+    rsi_period = 8  # الفترة الزمنية لمؤشر RSI
     profit_target = 0.01  # الربح المستهدف كنسبة مئوية
     stop_loss = 0.015  # إيقاف الخسارة كنسبة مئوية
 
@@ -267,21 +267,30 @@ class RSIStrategy(Strategy):
                     
     def next(self):
         price = self.data.Close[-1]
-        stop_loss_price = price * (1 - self.stop_loss)
-        take_profit_price = price * (1 + self.profit_target)
-        if self.data.Close[-3] > self.bol_l[-3] and self.data.Close[-2] < self.bol_l[-2] :
-        # if self.data.Close[-3] > self.bol_l[-3] and self.data.Close[-2] < self.bol_l[-2] and self.rsi[-1] > 25 and self.rsi[-1] < 40 :
-        # if self.data.Close[-3] > self.bol_l[-3] and self.data.Close[-2] < self.bol_l[-2] and self.rsi[-1] < 40 :
-        # if self.rsi[-1] > 25 and self.rsi[-1] < 40:
 
-        # if self.data.Close[-3] < self.bol_h[-3] and self.data.Close[-2] > self.bol_h[-2]:
-
-            if not self.position:
-                self.buy(sl=stop_loss_price, tp=take_profit_price)
+        # if self.data.Close[-3] > self.bol_l[-3] and self.data.Close[-2] < self.bol_l[-2] :
+        # # if self.data.Close[-3] > self.bol_l[-3] and self.data.Close[-2] < self.bol_l[-2] and self.rsi[-2] > 25 and self.rsi[-2] < 40 :
+        # # if self.data.Close[-3] > self.bol_l[-3] and self.data.Close[-2] < self.bol_l[-2] and self.rsi[-2] < 40 :
+        # # if self.rsi[-2] > 20 and self.rsi[-2] < 45:
+        # # if self.data.Close[-3] < self.bol_h[-3] and self.data.Close[-2] > self.bol_h[-2]:
+        
+        #     stop_loss_price = price * (1 - self.stop_loss)
+        #     take_profit_price = price * (1 + self.profit_target)
+        #     if not self.position:
+        #         self.buy(sl=stop_loss_price, tp=take_profit_price)
                 
         
         
         # if self.data.Close[-3] < self.bol_h[-3] and self.data.Close[-2] > self.bol_h[-2]:
+        
+        
+
+            # stop_loss_price = price * (1 + self.stop_loss)
+            # take_profit_price = price * (1 - self.profit_target)
+            
+            # if not self.position:
+            #     self.sell(sl=stop_loss_price, tp=take_profit_price)
+                
         #     for trade in self.trades:
         #         if trade.is_long:
         #             self.position.close()
@@ -343,7 +352,7 @@ if __name__ == "__main__":
 
         # print(stats.iloc[6])
         result.append([symbol, stats.iloc[6], trades, win_rate, best_trade, worst_trade, max_duration, avg_duration])
-        # stats.plot()
+        # stats.plot(pd.Series(stats))
         # print(stats)
         # bt.plot()
         # print(len(data))
