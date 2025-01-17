@@ -210,6 +210,7 @@ def should_close_trade(client,symbol):
 
 
 
+
 def should_open_futuer_trade(client,symbol):
     data = fetch_binance_futuer_data(client, symbol, Client.KLINE_INTERVAL_3MINUTE, start_date)
     
@@ -221,16 +222,40 @@ def should_open_futuer_trade(client,symbol):
     bol_l_band = bol_l(data)
     close_prices = data['close']
 
-    # فتح صفقة شراء إذا اخترق السعر الحد السفلي
+    is_buy = False
+    is_sell = False
+    side = ""
+    
     if close_prices.iloc[-3] > bol_l_band.iloc[-3] and close_prices.iloc[-2] < bol_l_band.iloc[-2]:
-        return True
+        is_buy= True
+        side = "buy"
 
     # إغلاق صفقة إذا اخترق السعر الحد العلوي
     if close_prices.iloc[-3] < bol_h_band.iloc[-3] and close_prices.iloc[-2] > bol_h_band.iloc[-2]:
-        return False
+        is_sell = True
+        side = "sell"
     
     
-    return False        
+    
+    
+    if is_buy and is_sell:
+        print(f"⚠️ تم إيجاد تضارب في عملة {symbol}")
+        return False, " "
+
+    # تحديد الإشارة النهائية
+    if is_sell:
+        print(f"📉 إشارة بيع على {symbol}")
+        return True, "sell"
+
+    if is_buy:
+        print(f"📈 إشارة شراء على {symbol}")
+        return True, "buy"
+    # فتح صفقة شراء إذا اخترق السعر الحد السفلي
+
+    
+    
+    return False,''    
+            
         
 
 def should_open_futuer_trade(client,symbol,intervel, limit):
@@ -240,24 +265,46 @@ def should_open_futuer_trade(client,symbol,intervel, limit):
     #     print(f"بيانات غير كافية لـ {symbol}")
     #     return
     
+    data = data[:-1]
+    
     bol_h_band = bol_h(data)
     bol_l_band = bol_l(data)
+    
     close_prices = data['close']
-    rsi = ict_calculate_rsi(close_prices,rsi_analize_period)
-    # print(rsi[-1])
-    # فتح صفقة شراء إذا اخترق السعر الحد السفلي
+    
+    is_buy = False
+    is_sell = False
+    side = ""
+    
     if close_prices.iloc[-3] > bol_l_band.iloc[-3] and close_prices.iloc[-2] < bol_l_band.iloc[-2]:
-    # if rsi[-1]:
-    # if close_prices.iloc[-3] > bol_l_band.iloc[-3] and close_prices.iloc[-2] < bol_l_band.iloc[-2]  and rsi[-2] > 25 and rsi[-2] < 40 :
-        return True
+        is_buy= True
+        side = "buy"
 
     # إغلاق صفقة إذا اخترق السعر الحد العلوي
     if close_prices.iloc[-3] < bol_h_band.iloc[-3] and close_prices.iloc[-2] > bol_h_band.iloc[-2]:
-        return False
+        is_sell = True
+        side = "sell"
     
     
-    return False        
-        
+    
+    
+    if is_buy and is_sell:
+        print(f"⚠️ تم إيجاد تضارب في عملة {symbol}")
+        return False, " "
+
+    # تحديد الإشارة النهائية
+    if is_sell:
+        print(f"📉 إشارة بيع على {symbol}")
+        return True, "sell"
+
+    if is_buy:
+        print(f"📈 إشارة شراء على {symbol}")
+        return True, "buy"
+    # فتح صفقة شراء إذا اخترق السعر الحد السفلي
+
+    
+    
+    return False,''  
 
 
 

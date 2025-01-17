@@ -39,8 +39,8 @@ last_trade_time = {}
 klines_interval=Client.KLINE_INTERVAL_5MINUTE
 klines_limit=1
 top_symbols=[]
-count_top_symbols=10
-analize_period=300
+count_top_symbols=200
+analize_period=500
 black_list=[
         # # 'XRPUSDT',
         # 'ETHUSDT', 'BTCUSDT', 'SOLUSDT', 'ENSUSDT', 'BNBUSDT', 'FILUSDT',
@@ -165,56 +165,56 @@ def bol_l(df):
 #     rsi = 100 - (100 / (1 + rs))
 #     return rsi
 
-def calculate_rsi(prices, period=14):
-    """
-    حساب مؤشر RSI بناءً على فترة محددة.
+# def calculate_rsi(prices, period=14):
+#     """
+#     حساب مؤشر RSI بناءً على فترة محددة.
     
-    Args:
-        prices (list): قائمة بأسعار الإغلاق.
-        period (int): فترة الحساب (default: 14).
+#     Args:
+#         prices (list): قائمة بأسعار الإغلاق.
+#         period (int): فترة الحساب (default: 14).
     
-    Returns:
-        list: قائمة بقيم RSI لكل فترة.
-    """
-    # prices = pd.Series(prices).diff()
-    if len(prices) < period + 1:
-        raise ValueError("عدد البيانات أقل من الفترة المطلوبة لحساب RSI.")
-    # deltas = pd.Series(data)
-    # حساب التغيرات (Deltas)
-    deltas = [prices[i] - prices[i - 1] for i in range(1, len(prices))]
+#     Returns:
+#         list: قائمة بقيم RSI لكل فترة.
+#     """
+#     # prices = pd.Series(prices).diff()
+#     if len(prices) < period + 1:
+#         raise ValueError("عدد البيانات أقل من الفترة المطلوبة لحساب RSI.")
+#     # deltas = pd.Series(data)
+#     # حساب التغيرات (Deltas)
+#     deltas = [prices[i] - prices[i - 1] for i in range(1, len(prices))]
     
-    # المكاسب والخسائر الأولية
-    gains = [max(delta, 0) for delta in deltas]
-    losses = [abs(min(delta, 0)) for delta in deltas]
+#     # المكاسب والخسائر الأولية
+#     gains = [max(delta, 0) for delta in deltas]
+#     losses = [abs(min(delta, 0)) for delta in deltas]
     
-    # حساب متوسط المكاسب والخسائر الأولية
-    avg_gain = sum(gains[:period]) / period
-    avg_loss = sum(losses[:period]) / period
+#     # حساب متوسط المكاسب والخسائر الأولية
+#     avg_gain = sum(gains[:period]) / period
+#     avg_loss = sum(losses[:period]) / period
     
-    # قائمة لقيم RSI
-    rsis = pd.Series()
+#     # قائمة لقيم RSI
+#     rsis = pd.Series()
     
-    # البدء من الفترة بعد حساب المتوسطات الأولية
-    for i in range(period, len(prices) - 1):
-        gain = gains[i]
-        loss = losses[i]
+#     # البدء من الفترة بعد حساب المتوسطات الأولية
+#     for i in range(period, len(prices) - 1):
+#         gain = gains[i]
+#         loss = losses[i]
         
-        # المتوسطات الملساء
-        avg_gain = ((avg_gain * (period - 1)) + gain) / period
-        avg_loss = ((avg_loss * (period - 1)) + loss) / period
+#         # المتوسطات الملساء
+#         avg_gain = ((avg_gain * (period - 1)) + gain) / period
+#         avg_loss = ((avg_loss * (period - 1)) + loss) / period
         
-        # حساب RSI
-        rs = avg_gain / avg_loss if avg_loss != 0 else 0
-        rsi = 100 - (100 / (1 + rs))
+#         # حساب RSI
+#         rs = avg_gain / avg_loss if avg_loss != 0 else 0
+#         rsi = 100 - (100 / (1 + rs))
         
-        rsis.append(rsi)
+#         rsis.append(rsi)
     
-    return rsis
+#     return rsis
 
 
-# def calculate_rsi(data, period=8):
-#     """حساب RSI متوافق مع مكتبة Backtesting"""
-#     return rsi(close=pd.Series(data), window=period)
+def calculate_rsi(data, period=8):
+    """حساب RSI متوافق مع مكتبة Backtesting"""
+    return rsi(close=pd.Series(data), window=period)
 
 # تعريف الاستراتيجية
 class RSIStrategy(Strategy):
@@ -268,16 +268,16 @@ class RSIStrategy(Strategy):
     def next(self):
         price = self.data.Close[-1]
 
-        # if self.data.Close[-3] > self.bol_l[-3] and self.data.Close[-2] < self.bol_l[-2] :
+        if self.data.Close[-3] > self.bol_l[-3] and self.data.Close[-2] < self.bol_l[-2] :
         # # if self.data.Close[-3] > self.bol_l[-3] and self.data.Close[-2] < self.bol_l[-2] and self.rsi[-2] > 25 and self.rsi[-2] < 40 :
         # # if self.data.Close[-3] > self.bol_l[-3] and self.data.Close[-2] < self.bol_l[-2] and self.rsi[-2] < 40 :
         # # if self.rsi[-2] > 20 and self.rsi[-2] < 45:
         # # if self.data.Close[-3] < self.bol_h[-3] and self.data.Close[-2] > self.bol_h[-2]:
         
-        #     stop_loss_price = price * (1 - self.stop_loss)
-        #     take_profit_price = price * (1 + self.profit_target)
-        #     if not self.position:
-        #         self.buy(sl=stop_loss_price, tp=take_profit_price)
+            stop_loss_price = price * (1 - self.stop_loss)
+            take_profit_price = price * (1 + self.profit_target)
+            if not self.position:
+                self.buy(sl=stop_loss_price, tp=take_profit_price)
                 
         
         
@@ -285,11 +285,11 @@ class RSIStrategy(Strategy):
         
         
 
-            # stop_loss_price = price * (1 + self.stop_loss)
-            # take_profit_price = price * (1 - self.profit_target)
+        #     stop_loss_price = price * (1 + self.stop_loss)
+        #     take_profit_price = price * (1 - self.profit_target)
             
-            # if not self.position:
-            #     self.sell(sl=stop_loss_price, tp=take_profit_price)
+        #     if not self.position:
+        #         self.sell(sl=stop_loss_price, tp=take_profit_price)
                 
         #     for trade in self.trades:
         #         if trade.is_long:
