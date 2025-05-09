@@ -7,6 +7,7 @@ from binance.client import Client
 import statistics
 from binance.exceptions import BinanceAPIException
 import ta 
+from ta.momentum import rsi
 
 
 api_key = 'of6qt1T1MpGvlgma1qxwFTLdrGNNVsMj0fKf8LZy1sMf3OqTrwHC7BCRIkgsSsda'
@@ -36,10 +37,10 @@ excluded_symbols = set()  # قائمة العملات المستثناة بسب�
 # bot_settings=Settings()
 symbols_to_trade =[]
 last_trade_time = {}
-klines_interval=Client.KLINE_INTERVAL_3MINUTE
+klines_interval=Client.KLINE_INTERVAL_5MINUTE
 klines_limit=1
 top_symbols=[]
-count_top_symbols=10
+count_top_symbols=200
 analize_period=120
 black_list=[
         # # 'XRPUSDT',
@@ -152,16 +153,10 @@ def bol_h(df):
 def bol_l(df):
     return ta.volatility.BollingerBands(pd.Series(df)).bollinger_lband() 
 
-def calculate_rsi(data, period=14):
+def calculate_rsi(data, period=8):
     """حساب RSI متوافق مع مكتبة Backtesting"""
-    deltas = pd.Series(data).diff()  # تحويل البيانات إلى pandas Series للتوافق
-    gains = deltas.where(deltas > 0, 0.0)
-    losses = -deltas.where(deltas < 0, 0.0)
-    avg_gain = gains.rolling(window=period).mean()
-    avg_loss = losses.rolling(window=period).mean()
-    rs = avg_gain / avg_loss
-    rsi = 100 - (100 / (1 + rs))
-    return rsi
+    return rsi(close=pd.Series(data), window=period)
+
 
 
 # حساب مؤشر RSI

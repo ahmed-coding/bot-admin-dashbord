@@ -104,7 +104,7 @@ class BaseSettings:
         
         for item in self.data:
             if item['key'] == 'leverage':
-                return int(item['value']) 
+                return int(item['value'])
         return None
     
     
@@ -146,7 +146,7 @@ class BaseSettings:
         
         for item in self.data:
             if item['key'] == 'count_top_symbols':
-                return int(item['value'])
+                return item['value']
         return None
     
     
@@ -166,4 +166,3 @@ class BaseSettings:
                 return item['value']
         return None
     
-
