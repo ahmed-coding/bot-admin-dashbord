@@ -526,7 +526,7 @@ def detect_bos(data, is_sell = False):
 
 
 
-def fetch_ict_data(client,symbol, interval, limit=500):
+def fetch_ict_data(client,symbol, interval, limit=20):
     """
     جلب بيانات الشموع التاريخية من Binance.
     """
