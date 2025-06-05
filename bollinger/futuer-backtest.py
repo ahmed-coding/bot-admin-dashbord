@@ -219,7 +219,7 @@ def calculate_rsi(data, period=8):
 # تعريف الاستراتيجية
 class RSIStrategy(Strategy):
     rsi_period = 8  # الفترة الزمنية لمؤشر RSI
-    profit_target = 0.01  # الربح المستهدف كنسبة مئوية
+    profit_target = 0.015  # الربح المستهدف كنسبة مئوية
     stop_loss = 0.015  # إيقاف الخسارة كنسبة مئوية
 
     def init(self):
@@ -278,22 +278,20 @@ class RSIStrategy(Strategy):
             take_profit_price = price * (1 + self.profit_target)
             if not self.position:
                 self.buy(sl=stop_loss_price, tp=take_profit_price)
-                
         
         
-        # if self.data.Close[-3] < self.bol_h[-3] and self.data.Close[-2] > self.bol_h[-2]:
-        
+        if self.data.Close[-3] < self.bol_h[-3] and self.data.Close[-2] > self.bol_h[-2]:
         
 
-        #     stop_loss_price = price * (1 + self.stop_loss)
-        #     take_profit_price = price * (1 - self.profit_target)
+            stop_loss_price = price * (1 + self.stop_loss)
+            take_profit_price = price * (1 - self.profit_target)
             
-        #     if not self.position:
-        #         self.sell(sl=stop_loss_price, tp=take_profit_price)
+            if not self.position:
+                self.sell(sl=stop_loss_price, tp=take_profit_price)
                 
-        #     for trade in self.trades:
-        #         if trade.is_long:
-        #             self.position.close()
+            for trade in self.trades:
+                if trade.is_long:
+                    self.position.close()
 
 
 # تحميل البيانات التاريخية (استخدام Binance أو بيانات جاهزة)

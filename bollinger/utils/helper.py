@@ -236,8 +236,6 @@ def should_open_futuer_trade(client,symbol):
         side = "sell"
     
     
-    
-    
     if is_buy and is_sell:
         print(f"⚠️ تم إيجاد تضارب في عملة {symbol}")
         return False, " "
@@ -284,10 +282,7 @@ def should_open_futuer_trade(client,symbol,intervel, limit):
     if close_prices.iloc[-3] < bol_h_band.iloc[-3] and close_prices.iloc[-2] > bol_h_band.iloc[-2]:
         is_sell = True
         side = "sell"
-    
-    
-    
-    
+
     if is_buy and is_sell:
         print(f"⚠️ تم إيجاد تضارب في عملة {symbol}")
         return False, " "
@@ -302,8 +297,6 @@ def should_open_futuer_trade(client,symbol,intervel, limit):
         return True, "buy"
     # فتح صفقة شراء إذا اخترق السعر الحد السفلي
 
-    
-    
     return False,''  
 
 

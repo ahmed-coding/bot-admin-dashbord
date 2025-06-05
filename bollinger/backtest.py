@@ -38,7 +38,7 @@ excluded_symbols = set()  # قائمة العملات المستثناة بسب�
 symbols_to_trade =[]
 last_trade_time = {}
 klines_interval=Client.KLINE_INTERVAL_5MINUTE
-klines_limit=1
+klines_limit=30
 top_symbols=[]
 count_top_symbols=200
 analize_period=120
@@ -123,27 +123,38 @@ black_list=[
 #     return top_symbols
 
 
-def get_top_symbols(limit=20, profit_target=0.007, rsi_threshold=70):
+def get_top_symbols(limit=20, profit_target=0.015, rsi_threshold=70):
     tickers = client.get_ticker()
-    # exchange_info = client.futures_exchange_info()  # جلب معلومات التداول
-    # valid_symbols = {info['symbol'] for info in exchange_info['symbols']}  # الرموز المسموح بها
     sorted_tickers = sorted(tickers, key=lambda x: float(x['quoteVolume']), reverse=True)
     top_symbols = []
     
     for ticker in sorted_tickers:
-        if ticker['symbol'].endswith("USDT") and ticker['symbol'] not in black_list:  # تحقق من صلاحية الرمز
+        if ticker['symbol'].endswith("USDT") and ticker['symbol'] not in excluded_symbols and ticker['symbol'] not in black_list :
+        # if ticker['symbol'].endswith("USDT") and ticker['symbol'] not in excluded_symbols and not 'BTTC' in str(ticker['symbol']):
             try:
                 klines = client.get_klines(symbol=ticker['symbol'], interval=klines_interval, limit=klines_limit)
-                if klines is None or klines == []:
-                    continue
-                top_symbols.append(ticker['symbol'])
+                closing_prices = [float(kline[4]) for kline in klines]
+                stddev = statistics.stdev(closing_prices)
+                
+                # حساب مؤشر RSI
+                rsi_ = calculate_rsi(closing_prices,period=klines_limit)
+                
+                # اختيار العملة بناءً على التذبذب ومؤشر RSI
+                avg_price = sum(closing_prices) / len(closing_prices)
+                volatility_ratio = stddev / avg_price
+
+                # if stddev < 0.04 and volatility_ratio >= profit_target :
+                if stddev < 0.04 and volatility_ratio >= profit_target :
+
+                    top_symbols.append(ticker['symbol'])
+                    print(f"تم اختيار العملة {ticker['symbol']} بنسبة تذبذب {volatility_ratio:.4f} و RSI {rsi_[0]} ")
+                
                 if len(top_symbols) >= limit:
                     break
             except BinanceAPIException as e:
                 print(f"خطأ في جلب بيانات {ticker['symbol']}: {e}")
                 excluded_symbols.add(ticker['symbol'])
     return top_symbols
-
 
 
 
@@ -264,11 +275,11 @@ class RSIStrategy(Strategy):
                 
         
         
-        if self.data.Close[-3] < self.bol_h[-3] and self.data.Close[-2] > self.bol_h[-2]:
-            if not self.position:
-                stop_loss_price = price * (1 + self.stop_loss)
-                take_profit_price = price * (1 - self.profit_target)
-                self.sell(sl=stop_loss_price, tp=take_profit_price)
+        # if self.data.Close[-3] < self.bol_h[-3] and self.data.Close[-2] > self.bol_h[-2]:
+        #     if not self.position:
+        #         stop_loss_price = price * (1 + self.stop_loss)
+        #         take_profit_price = price * (1 - self.profit_target)
+        #         self.sell(sl=stop_loss_price, tp=take_profit_price)
 
 
 # تحميل البيانات التاريخية (استخدام Binance أو بيانات جاهزة)
