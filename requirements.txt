@@ -1,0 +1,9 @@
+pandas
+scikit-learn
+keras
+gym
+matplotlib
+ta
+numpy 
+tensorflow[and-cuda]
+legate

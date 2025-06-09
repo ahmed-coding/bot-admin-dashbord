@@ -259,7 +259,7 @@ def should_open_futuer_trade(client,symbol,intervel, limit):
     # if data is None or len(data) < 20:
     #     print(f"بيانات غير كافية لـ {symbol}")
     #     return
-    
+    # data = data[:-1]  # حذف آخر صف من البيانات لأنه قد يكون غير مكتمل
     bol_h_band = bol_h(data)
     bol_l_band = bol_l(data)
     
@@ -277,10 +277,7 @@ def should_open_futuer_trade(client,symbol,intervel, limit):
     if close_prices.iloc[-3] < bol_h_band.iloc[-3] and close_prices.iloc[-2] > bol_h_band.iloc[-2]:
         is_sell = True
         side = "sell"
-    
-    
-    
-    
+
     if is_buy and is_sell:
         print(f"⚠️ تم إيجاد تضارب في عملة {symbol}")
         return False, " "
