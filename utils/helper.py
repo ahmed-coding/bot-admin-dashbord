@@ -270,13 +270,13 @@ def should_open_futuer_trade(client,symbol,intervel, limit):
     is_sell = False
     side = ""
     
-    # if close_prices.iloc[-3] > bol_l_band.iloc[-3] and close_prices.iloc[-2] < bol_l_band.iloc[-2] and rsi > 20 and rsi < 40 :
-    if close_prices.iloc[-3] > bol_l_band.iloc[-3] and close_prices.iloc[-2] < bol_l_band.iloc[-2]  and rsi < 40 :
+    if close_prices.iloc[-3] > bol_l_band.iloc[-3] and close_prices.iloc[-2] < bol_l_band.iloc[-2] and rsi > 20 and rsi < 40 :
+    # if close_prices.iloc[-3] > bol_l_band.iloc[-3] and close_prices.iloc[-2] < bol_l_band.iloc[-2]  and rsi < 40 :
         is_buy= True
         side = "buy"
 
     # إغلاق صفقة إذا اخترق السعر الحد العلوي
-    if close_prices.iloc[-3] < bol_h_band.iloc[-3] and close_prices.iloc[-2] > bol_h_band.iloc[-2] and rsi > 70:
+    if close_prices.iloc[-3] < bol_h_band.iloc[-3] and close_prices.iloc[-2] > bol_h_band.iloc[-2] and rsi > 75:
         is_sell = True
         side = "sell"
 

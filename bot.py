@@ -38,7 +38,7 @@ active_trades = request_load.get_futuer_open_trad()
 balance = helper.get_futuer_usdt_balance(client) # الرصيد المبدئي للبوت
 # balance = 3# الرصيد المبدئي للبوت
 
-investment = 0.5 # حجم كل صفقة
+investment = 0.55 # حجم كل صفقة
 base_profit_target=0.01 # نسبة الربح
 # base_profit_target=0.005 # نسبة الربح
 base_stop_loss=0.008 # نسبة الخسارة
@@ -47,7 +47,7 @@ timeout=60 # وقت انتهاء وقت الصفقة
 commission_rate = 0.002 # نسبة العمولة للمنصة
 klines_interval=Client.KLINE_INTERVAL_5MINUTE
 klines_limit=22
-count_top_symbols= 50
+count_top_symbols= 70
 analize_period=120
 start_date= '3 hours ago UTC'
 
