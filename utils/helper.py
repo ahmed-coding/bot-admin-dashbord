@@ -262,19 +262,21 @@ def should_open_futuer_trade(client,symbol,intervel, limit):
     # data = data[:-1]  # حذف آخر صف من البيانات لأنه قد يكون غير مكتمل
     bol_h_band = bol_h(data)
     bol_l_band = bol_l(data)
-    
+    rsi = fetch_ris_binance_data(client, symbol, intervel, limit=8)
+
     close_prices = data['close']
     
     is_buy = False
     is_sell = False
     side = ""
     
-    if close_prices.iloc[-3] > bol_l_band.iloc[-3] and close_prices.iloc[-2] < bol_l_band.iloc[-2]:
+    # if close_prices.iloc[-3] > bol_l_band.iloc[-3] and close_prices.iloc[-2] < bol_l_band.iloc[-2] and rsi > 20 and rsi < 40 :
+    if close_prices.iloc[-3] > bol_l_band.iloc[-3] and close_prices.iloc[-2] < bol_l_band.iloc[-2]  and rsi < 40 :
         is_buy= True
         side = "buy"
 
     # إغلاق صفقة إذا اخترق السعر الحد العلوي
-    if close_prices.iloc[-3] < bol_h_band.iloc[-3] and close_prices.iloc[-2] > bol_h_band.iloc[-2]:
+    if close_prices.iloc[-3] < bol_h_band.iloc[-3] and close_prices.iloc[-2] > bol_h_band.iloc[-2] and rsi > 70:
         is_sell = True
         side = "sell"
 
@@ -484,7 +486,7 @@ def ict_calculate_rsi(prices, period=14):
 def fetch_ris_binance_data(client, symbol, intervel , limit):
     
     klines = client.get_klines(symbol=symbol, interval=intervel, limit=limit +1)
-    
+    klines = klines[:-1]  # حذف آخر صف لأنه قد يكون غير مكتمل
     closing_prices = [float(kline[4]) for kline in klines]
 
     return calculate_rsi(closing_prices,limit)

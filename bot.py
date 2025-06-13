@@ -475,7 +475,7 @@ def check_trade_conditions():
 
 
 # تحديث قائمة الرموز بشكل دوري
-def update_symbols_periodically(interval=600,profit_target=0.007 ):
+def update_symbols_periodically(interval=600,profit_target=0.005 ):
     global symbols_to_trade,balance
     balance = helper.get_futuer_usdt_balance(client)
     print(f"الرصيد المتبقي {balance}")
