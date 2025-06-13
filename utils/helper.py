@@ -259,7 +259,7 @@ def should_open_futuer_trade(client,symbol,intervel, limit):
     # if data is None or len(data) < 20:
     #     print(f"بيانات غير كافية لـ {symbol}")
     #     return
-    # data = data[:-1]  # حذف آخر صف من البيانات لأنه قد يكون غير مكتمل
+    data = data[:-1]  # حذف آخر صف من البيانات لأنه قد يكون غير مكتمل
     bol_h_band = bol_h(data)
     bol_l_band = bol_l(data)
     rsi = fetch_ris_binance_data(client, symbol, intervel, limit=8)
