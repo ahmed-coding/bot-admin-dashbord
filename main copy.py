@@ -19,16 +19,11 @@ import utils.request_load as request_load
 
 import utils.helper as helper
 import utils.request_load as request_load
-from utils.best_strategy import should_open_best_trade
 # from utils.settings import BaseSettings
 
 # settings= BaseSettings(for_futuer=True)
 
 client = Client(API_KEY,API_SECRET, requests_params={'timeout':90})
-# client.API_URL = 'https://testnet.binance.vision/api'
-# client = Client(FUTUER_API_TEST_KEY, FUTUER_API_TEST_SECRET, testnet=True, requests_params={'timeout':90})
-# client.API_URL = "https://testnet.binancefuture.com"
-
 
 # client.futures_account_balance()
 current_prices = {}
@@ -46,10 +41,10 @@ base_stop_loss=0.008 # نسبة الخسارة
 # base_stop_loss=0.000 # نسبة الخسارة
 timeout=60 # وقت انتهاء وقت الصفقة
 commission_rate = 0.002 # نسبة العمولة للمنصة
-klines_interval=Client.KLINE_INTERVAL_3MINUTE
-klines_limit= 150
+klines_interval=Client.KLINE_INTERVAL_5MINUTE
+klines_limit=22
 count_top_symbols= 70
-analize_period= 200
+analize_period=120
 start_date= '3 hours ago UTC'
 
 
@@ -84,7 +79,6 @@ def can_trade(symbol):
         return False
     return True 
 
-
 def open_futures_trade(symbol, investment, leverage):
     global base_profit_target, base_stop_loss, active_trades, balance
     # print(symbol)
@@ -104,8 +98,7 @@ def open_futures_trade(symbol, investment, leverage):
     #     # print(f"لا يجب شراء {symbol} في الوقت الحالي ")
     #     return
     
-    # confirm, side =  helper.should_open_futuer_trade(client=client, symbol=symbol, intervel=klines_interval,limit=analize_period)
-    confirm, side =  should_open_best_trade(client=client, symbol=symbol, intervel=klines_interval,limit=analize_period)
+    confirm, side =  helper.should_open_futuer_trade(client=client, symbol=symbol, intervel=klines_interval,limit=analize_period)
     # confirm, side =  helper.should_open_futuer_trade(client=client, symbol=symbol,)
 
     # if not helper.pattern_should_open_trade(client=client, symbol=symbol, interval=klines_interval,limit=analize_period,rsi_period=rsi_analize_period):
@@ -114,13 +107,6 @@ def open_futures_trade(symbol, investment, leverage):
         
         return
     
-    # time.sleep(3)
-    # klines = client.get_klines(symbol=symbol, interval=klines_interval, limit=15)
-    # closing_prices = [float(kline[4]) for kline in klines]
-    # avg_volatility = statistics.stdev(closing_prices)
-
-    # base_profit_target = base_profit_target # نسبة الربح
-    # base_stop_loss= base_stop_loss 
     try:
         # ضبط الرافعة المالية
         client.futures_change_leverage(symbol=symbol, leverage=leverage)
@@ -292,122 +278,6 @@ def open_futures_trade(symbol, investment, leverage):
         print(f"خطأ أثناء فتح الصفقة لعملة {symbol}: {e}")
         return None
 
-
-
-def open_trade_with_dynamic_target(symbol, investment=2.5, base_profit_target=0.002, base_stop_loss=0.0005, timeout=30):
-    global balance, commission_rate, active_trades
-    
-    # trading_status= bot_settings.trading_status()
-    # if trading_status =="0":
-    #     # print("the trading is of can't open more trad")
-    #     return
-    # Ensure sufficient balance before opening the trade
-    if balance < investment:
-        # print(f"{datetime.now()} - {symbol} -الرصيد الحالي غير كافٍ لفتح صفقة جديدة.")
-        return
-
-    if not check_bnb_balance(client=client):
-        print(f"{datetime.now()} - الرصيد غير كافٍ من BNB لتغطية الرسوم. {symbol} يرجى إيداع BNB.")
-        return
-    
-    # if not can_trade(symbol=symbol):
-    #     # print(f"{datetime.now()} -لقدم تم فتح صفقة حديثاً لعملة {symbol} سيتم الانتظار .")
-
-    #     return
-        
-    price = float(client.futures_symbol_ticker(symbol=symbol)['price'])
-    # klines = client.get_klines(symbol=symbol, interval=klines_interval, limit=analize_period)
-    # closing_prices = [float(kline[4]) for kline in klines]
-    # avg_volatility = statistics.stdev(closing_prices)
-
-    # Ensure both strategies' conditions are met before opening a trade
-    if not should_open_trade(client=client, symbol=symbol):
-        # print(f"لا يجب شراء {symbol} في الوقت الحالي ")
-        return
-
-    # Calculate dynamic profit target and stop loss based on volatility
-    profit_target = base_profit_target 
-    stop_loss = base_stop_loss
-    target_price = price * (1 + profit_target)
-    stop_price = price * (1 - stop_loss)
-    quantity = adjust_quantity(client,symbol, (investment) / price)
-
-
-    try:
-        # Execute the buy order
-        order = client.order_market_buy(symbol=symbol, quantity=quantity)
-        commission = investment * commission_rate
-        payload= {
-            "symbol": symbol,
-            'quantity': quantity,
-            'initial_price': price,
-            'target_price': target_price,
-            'stop_price': stop_price,
-            'start_time':str(datetime.fromtimestamp(time.time())),
-            'timeout': timeout * 60,
-            'investment': investment - commission
-        }
-        # active_trades[symbol] = {
-        #     'quantity': quantity,
-        #     'initial_price': price,
-        #     'target_price': target_price,
-        #     'stop_price': stop_price,
-        #     'start_time': str(datetime.fromtimestamp(time.time())),
-        #     'timeout': timeout * 60,
-        #     'investment': investment - commission
-        # }
-        # order_response= request_load.create_trad(payload)
-        # active_trades = request_load.get_futuer_open_trad()
-        # if order_response:
-        #     print(f"تم حفظ الصفقة بنجاح لعملة {symbol}")
-        # _active_trades = helper.get_futuer_active_trades(client)
-        
-        balance = helper.get_usdt_balance(client)
-        last_trade_time[symbol] = time.time()  # Record the trade timestamp
-        print(f"{datetime.now()} - تم فتح صفقة شراء لـ {symbol} بسعر {price}, بهدف {target_price} وإيقاف خسارة عند {stop_price}")
-        print(f"الرصيد المتبقي {balance}")
-    except BinanceAPIException as e:
-        if 'NOTIONAL' in str(e) or 'Invalid symbol' in str(e)  or 'Market is closed' in str(e):
-            excluded_symbols.append(symbol)
-        print(f"خطأ في فتح الصفقة لـ {symbol}: {e}")
-
-
-def sell_trade(symbol, trade_quantity):
-    
-    try:
-        # الحصول على الكمية المتاحة في المحفظة
-        balance_info = client.get_asset_balance(asset=symbol.replace("USDT", ""))
-        # available_quantity = float(balance_info['free'])
-        available_quantity = trade_quantity
-        current_price = float(client.futures_symbol_ticker(symbol=symbol)['price'])
-
-        # التأكد من أن الكمية تلبي الحد الأدنى لـ LOT_SIZE وتعديل الدقة المناسبة
-        step_size = get_lot_size(client,symbol)
-        if available_quantity < step_size:
-            print(f"{symbol} - الكمية المتاحة للبيع ({available_quantity}) أقل من الحد الأدنى المطلوب لـ LOT_SIZE ({step_size}).")
-            return 0
-
-        # ضبط الدقة للكمية حسب LOT_SIZE
-        precision = int(round(-math.log(step_size, 10), 0))
-        adjusted_quantity = round(math.floor(available_quantity / step_size) * step_size, precision)
-
-        if adjusted_quantity < step_size:
-            print(f"{symbol} - الكمية بعد التقريب ({adjusted_quantity}) لا تزال أقل من الحد الأدنى المطلوب لـ LOT_SIZE ({step_size}).")
-            return 0
-        # تنفيذ أمر البيع
-        client.order_market_sell(symbol=symbol, quantity=adjusted_quantity)
-        # sale_amount = adjusted_quantity * price
-        last_trade_time[symbol] = time.time()  # Record the trade timestamp
-        balance = helper.get_usdt_balance(client)
-        earnings = adjusted_quantity * current_price
-        print(f"تم تنفيذ عملية البيع لـ {symbol} بكمية {adjusted_quantity} وربح {earnings}")
-        print(f"الرصيد المتبقي {balance}")
-
-        return adjusted_quantity
-    except BinanceAPIException as e:
-        print(f"خطأ في بيع {symbol}: {e}")
-        return 0
-
 def check_trade_conditions():
     global balance,active_trades
     
@@ -428,10 +298,6 @@ def check_trade_conditions():
         result = None
         sold_quantity = 0
         total_sale = 0
-        # close_all= bot_settings.colose_all_status()
-        # if close_all =="0":
-        #     # print("the trading is of can't open more trad")
-        #     return
         try:
             if current_price >= trade['target_price']:
                 # sold_quantity = sell_trade(symbol, trade['quantity'])
@@ -588,6 +454,5 @@ if __name__ == "__main__":
     run_bot()
     update_futuer_active_trades(client)
     # print(get_open_positions_count(client))
-            
             
     print("Bot is turn of")
