@@ -40,7 +40,7 @@ import ta
 from binance.client import Client
 
 def should_open_best_trade(client: Client, symbol: str, intervel: str, limit: int):
-    klines = client.get_klines(symbol=symbol, interval=intervel, limit=limit)
+    klines = client.futures_klines(symbol=symbol, interval=intervel, limit=limit)
     df = pd.DataFrame(klines, columns=[
         'open_time', 'open', 'high', 'low', 'close', 'volume',
         'close_time', 'quote_asset_volume', 'number_of_trades',
@@ -62,7 +62,7 @@ def should_open_best_trade(client: Client, symbol: str, intervel: str, limit: in
     df['ema_long'] = ta.trend.ema_indicator(df['close'], window=21)
 
     # RSI
-    df['rsi'] = ta.momentum.rsi(df['close'], window=14)
+    df['rsi'] = ta.momentum.rsi(df['close'], window=8)
 
     # ATR for dynamic stop loss/take profit
     df['atr'] = ta.volatility.average_true_range(df['high'], df['low'], df['close'], window=14)
@@ -76,15 +76,17 @@ def should_open_best_trade(client: Client, symbol: str, intervel: str, limit: in
     # Bullish conditions
     bullish_bb_breakout = last_row['close'] > last_row['bb_bbh'] and second_last_row['close'] <= second_last_row['bb_bbh']
     bullish_ema_crossover = last_row['ema_short'] > last_row['ema_long'] and second_last_row['ema_short'] <= second_last_row['ema_long']
-    bullish_rsi = last_row['rsi'] > 50 and last_row['rsi'] > second_last_row['rsi']
+    bullish_rsi = last_row['rsi'] > 20 and last_row['rsi'] < 45 and last_row['rsi'] > second_last_row['rsi']
     uptrend = last_row['close'] > last_row['ema_trend']
 
     # Bearish conditions
     bearish_bb_breakout = last_row['close'] < last_row['bb_bbl'] and second_last_row['close'] >= second_last_row['bb_bbl']
     bearish_ema_crossover = last_row['ema_short'] < last_row['ema_long'] and second_last_row['ema_short'] >= second_last_row['ema_long']
-    bearish_rsi = last_row['rsi'] < 50 and last_row['rsi'] < second_last_row['rsi']
+    bearish_rsi = last_row['rsi'] > 70 and last_row['rsi'] < second_last_row['rsi']
     downtrend = last_row['close'] < last_row['ema_trend']
-
+    
+    recent_avg_volume = df['volume'][-20:-1].mean()
+    volume_confirm = last_row['volume'] > 1.5 * recent_avg_volume
     # Determine trade signal and side
     confirm = False
     side = None
@@ -95,6 +97,13 @@ def should_open_best_trade(client: Client, symbol: str, intervel: str, limit: in
     elif bearish_bb_breakout and bearish_ema_crossover and bearish_rsi and downtrend:
         confirm = True
         side = "sell"
+
+    # if bullish_bb_breakout and bullish_ema_crossover and bullish_rsi and uptrend and volume_confirm:
+    #     confirm = True
+    #     side = "buy"
+    # elif bearish_bb_breakout and bearish_ema_crossover and bearish_rsi and downtrend and volume_confirm:
+    #     confirm = True
+    #     side = "sell"
 
     return confirm, side
 

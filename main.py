@@ -40,23 +40,23 @@ balance = helper.get_futuer_usdt_balance(client) # الرصيد المبدئي �
 # balance = 3# الرصيد المبدئي للبوت
 
 investment = 0.55 # حجم كل صفقة
-base_profit_target=0.01 # نسبة الربح
+base_profit_target=0.003 # نسبة الربح
 # base_profit_target=0.005 # نسبة الربح
-base_stop_loss=0.008 # نسبة الخسارة
+base_stop_loss=0.0015 # نسبة الخسارة
 # base_stop_loss=0.000 # نسبة الخسارة
 timeout=60 # وقت انتهاء وقت الصفقة
 commission_rate = 0.002 # نسبة العمولة للمنصة
-klines_interval=Client.KLINE_INTERVAL_3MINUTE
-klines_limit= 150
-count_top_symbols= 70
+klines_interval=Client.KLINE_INTERVAL_1MINUTE
+klines_limit= 30
+count_top_symbols= 75
 analize_period= 200
 start_date= '3 hours ago UTC'
-
+profit_analyze = 4 if klines_interval == Client.KLINE_INTERVAL_15MINUTE else 24
 
 leverage = 10   # ال80رافعة المالية
 
 
-excluded_symbols =[]  # قائمة العملات المستثناة بسبب أخطاء متكررة
+excluded_symbols =['',]  # قائمة العملات المستثناة بسبب أخطاء متكررة
 symbols_to_trade =request_load.get_futuer_top_symbols(count_top_symbols ,excluded_symbols)
 last_trade_time = {}
 
@@ -66,7 +66,7 @@ __active_symbol = {}
 _symbols = client.futures_exchange_info()['symbols']
 valid_symbols = [s['symbol'] for s in _symbols]
 
-MAX_POSITIONS = 3
+MAX_POSITIONS = 5
 
 
 
@@ -90,7 +90,7 @@ def open_futures_trade(symbol, investment, leverage):
     # print(symbol)
     if get_open_positions_count(client) >= MAX_POSITIONS:
         return
-    
+    active_trades = request_load.get_futuer_open_trad()
     
     if symbol in active_trades:
         print(f"هناك صفقة مفتوحة من قبل لعملة {symbol}")
@@ -115,10 +115,17 @@ def open_futures_trade(symbol, investment, leverage):
         return
     
     # time.sleep(3)
-    # klines = client.get_klines(symbol=symbol, interval=klines_interval, limit=15)
-    # closing_prices = [float(kline[4]) for kline in klines]
-    # avg_volatility = statistics.stdev(closing_prices)
+    # Get recent klines for volatility calculation
+    klines = client.futures_klines(symbol=symbol, interval=klines_interval, limit=profit_analyze)
+    closing_prices = [float(k[4]) for k in klines]
+    stddev = statistics.stdev(closing_prices)
+    avg_price = sum(closing_prices) / len(closing_prices)
 
+    # Example: set target and stop loss as a multiple of volatility
+    volatility_ratio = stddev / avg_price if avg_price else 0
+    dynamic_profit_target = base_profit_target + volatility_ratio
+    dynamic_stop_loss = base_stop_loss + (volatility_ratio / 2)
+    
     # base_profit_target = base_profit_target # نسبة الربح
     # base_stop_loss= base_stop_loss 
     try:
@@ -131,7 +138,7 @@ def open_futures_trade(symbol, investment, leverage):
         if not ticker:
             excluded_symbols.append(symbol)
             return
-        
+        print(f":تم فتح الصفقة على فريم' {klines_interval} '")
         if side =="sell":
             
             current_price = float(ticker['price'])
@@ -140,8 +147,8 @@ def open_futures_trade(symbol, investment, leverage):
             _quantity = (investment / current_price) * leverage
             quantity = helper.QUN_Precision(client,((investment * leverage )/ current_price),symbol,)
             # base_profit_target = 0.01
-            _target_price = current_price * (1 - base_profit_target)
-            _stop_loss_price = current_price * (1 + base_stop_loss)
+            _target_price = current_price * (1 - dynamic_profit_target)
+            _stop_loss_price = current_price * (1 + dynamic_stop_loss)
 
             stop_loss_price = float(helper.Pric_Precision(client,_stop_loss_price, symbol))
             target_price = float(helper.Pric_Precision(client, _target_price, symbol))
@@ -213,8 +220,9 @@ def open_futures_trade(symbol, investment, leverage):
             _quantity = (investment / current_price) * leverage
             quantity = helper.QUN_Precision(client,((investment * leverage )/ current_price),symbol,)
             
-            _target_price = current_price * (1 + base_profit_target)
-            _stop_loss_price = current_price * (1 - base_stop_loss)
+            _target_price = current_price * (1 + dynamic_profit_target)
+            _stop_loss_price = current_price * (1 - dynamic_stop_loss)
+            
             stop_loss_price = float(helper.Pric_Precision(client,_stop_loss_price, symbol))
             target_price = float(helper.Pric_Precision(client, _target_price, symbol))
             payload = {
@@ -289,6 +297,8 @@ def open_futures_trade(symbol, investment, leverage):
         return payload
 
     except BinanceAPIException as e:
+        if 'NOTIONAL' in str(e) or 'Invalid symbol' in str(e)  or 'Market is closed' in str(e):
+            excluded_symbols.append(symbol)
         print(f"خطأ أثناء فتح الصفقة لعملة {symbol}: {e}")
         return None
 
@@ -472,7 +482,6 @@ def check_trade_conditions():
             continue
 
 
-
 # تحديث قائمة الرموز بشكل دوري
 def update_symbols_periodically(interval=600,profit_target=0.005 ):
     global symbols_to_trade,balance
@@ -583,6 +592,7 @@ def run_bot():
     trade_thread.start()
 
     print(f"تم بدء تشغيل البوت في {datetime.now()}")
+    print(f"على فريم {klines_interval}")
     
 if __name__ == "__main__":
     run_bot()

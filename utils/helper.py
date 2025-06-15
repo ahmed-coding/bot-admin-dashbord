@@ -259,7 +259,7 @@ def should_open_futuer_trade(client,symbol,intervel, limit):
     # if data is None or len(data) < 20:
     #     print(f"بيانات غير كافية لـ {symbol}")
     #     return
-    data = data[:-1]  # حذف آخر صف من البيانات لأنه قد يكون غير مكتمل
+    # data = data[:-1]  # حذف آخر صف من البيانات لأنه قد يكون غير مكتمل
     bol_h_band = bol_h(data)
     bol_l_band = bol_l(data)
     rsi = fetch_ris_binance_data(client, symbol, intervel, limit=8)
@@ -485,8 +485,8 @@ def ict_calculate_rsi(prices, period=14):
 
 def fetch_ris_binance_data(client, symbol, intervel , limit):
     
-    klines = client.get_klines(symbol=symbol, interval=intervel, limit=limit +1)
-    klines = klines[:-1]  # حذف آخر صف لأنه قد يكون غير مكتمل
+    klines = client.futures_klines(symbol=symbol, interval=intervel, limit=limit +1)
+    # klines = klines[:-1]  # حذف آخر صف لأنه قد يكون غير مكتمل
     closing_prices = [float(kline[4]) for kline in klines]
 
     return calculate_rsi(closing_prices,limit)
