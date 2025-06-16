@@ -46,12 +46,12 @@ base_stop_loss=0.0015 # نسبة الخسارة
 # base_stop_loss=0.000 # نسبة الخسارة
 timeout=60 # وقت انتهاء وقت الصفقة
 commission_rate = 0.002 # نسبة العمولة للمنصة
-klines_interval=Client.KLINE_INTERVAL_1MINUTE
-klines_limit= 30
-count_top_symbols= 75
+klines_interval=Client.KLINE_INTERVAL_5MINUTE
+klines_limit= 100
+count_top_symbols= 150
 analize_period= 200
 start_date= '3 hours ago UTC'
-profit_analyze = 4 if klines_interval == Client.KLINE_INTERVAL_15MINUTE else 24
+profit_analyze = 5 if klines_interval == Client.KLINE_INTERVAL_15MINUTE else 24
 
 leverage = 10   # ال80رافعة المالية
 
@@ -90,6 +90,7 @@ def open_futures_trade(symbol, investment, leverage):
     # print(symbol)
     if get_open_positions_count(client) >= MAX_POSITIONS:
         return
+    
     active_trades = request_load.get_futuer_open_trad()
     
     if symbol in active_trades:
