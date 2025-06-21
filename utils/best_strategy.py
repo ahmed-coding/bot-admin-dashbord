@@ -96,19 +96,19 @@ def should_open_best_trade(client: Client, symbol: str, intervel: str, limit: in
     # print(f"Volume Confirm: {volume_confirm}")
     # print('*'*50)
     
-    # if bullish_rsi and uptrend:
+    # if bullish_rsi and volume_confirm:
     #     confirm = True
     #     side = "buy"
-    # elif bearish_rsi and downtrend:
+    # elif bearish_rsi and volume_confirm:
     #     confirm = True
     #     side = "sell"
         
-    if bullish_bb_breakout and bullish_ema_crossover and bullish_rsi :
-        confirm = True
-        side = "buy"
-    elif bearish_bb_breakout and bearish_ema_crossover and bearish_rsi:
-        confirm = True
-        side = "sell"
+    # if bullish_bb_breakout and bullish_ema_crossover and bullish_rsi:
+    #     confirm = True
+    #     side = "buy"
+    # elif bearish_bb_breakout and bearish_ema_crossover and bearish_rsi:
+    #     confirm = True
+    #     side = "sell"
 
         
     # if bullish_bb_breakout and bullish_ema_crossover and bullish_rsi and uptrend:
@@ -118,12 +118,12 @@ def should_open_best_trade(client: Client, symbol: str, intervel: str, limit: in
     #     confirm = True
     #     side = "sell"
 
-    # if bullish_bb_breakout and bullish_ema_crossover and bullish_rsi and uptrend and volume_confirm:
-    #     confirm = True
-    #     side = "buy"
-    # elif bearish_bb_breakout and bearish_ema_crossover and bearish_rsi and downtrend and volume_confirm:
-    #     confirm = True
-    #     side = "sell"
+    if bullish_bb_breakout and bullish_ema_crossover and bullish_rsi and uptrend and volume_confirm:
+        confirm = True
+        side = "buy"
+    elif bearish_bb_breakout and bearish_ema_crossover and bearish_rsi and downtrend and volume_confirm:
+        confirm = True
+        side = "sell"
 
     return confirm, side
 
